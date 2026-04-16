@@ -10,6 +10,15 @@
         <maven.compiler.release>23</maven.compiler.release>
         <exec.mainClass>cat.xtec.ioc.demo_aplicacio_escriptori.Demo_aplicacio_escriptori</exec.mainClass>
     </properties>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.11.0</version>
+            </plugin>
+        </plugins>
+    </build>
     <dependencies>
         <!-- Jackson JSON library -->
         <dependency>

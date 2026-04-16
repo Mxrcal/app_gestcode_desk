@@ -68,8 +68,17 @@ public class UsuariForm extends JFrame {
         estilitzarBoto(logoutButton, new Color(220, 53, 69)); // Vermell
         logoutButton.addActionListener(e -> ferLogout());
 
+        JButton afegirLlibreButton = new JButton("+ Afegir Llibre");
+        estilitzarBoto(afegirLlibreButton, new Color(0, 123, 255)); // Blau
+        afegirLlibreButton.addActionListener(e -> new LlibreAfegirForm(apiClient).setVisible(true));
+
+        JPanel botoPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
+        botoPanel.setBackground(Color.WHITE);
+        botoPanel.add(afegirLlibreButton);
+        botoPanel.add(logoutButton);
+
         headerPanel.add(titleLabel, BorderLayout.WEST);
-        headerPanel.add(logoutButton, BorderLayout.EAST);
+        headerPanel.add(botoPanel, BorderLayout.EAST);
 
         // --- FORMULARI DADES ---
         JPanel formPanel = new JPanel(new GridLayout(4, 4, 15, 15)); // 4 files, 4 columnes (2 parells de label+input)

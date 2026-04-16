@@ -1,0 +1,10 @@
+cat\xtec\ioc\demo_aplicacio_escriptori\api\HttpResult.class
+cat\xtec\ioc\demo_aplicacio_escriptori\api\ApiClient.class
+cat\xtec\ioc\demo_aplicacio_escriptori\ui\LlibreAfegirForm.class
+cat\xtec\ioc\demo_aplicacio_escriptori\Demo_aplicacio_escriptori.class
+cat\xtec\ioc\demo_aplicacio_escriptori\ui\LoginForm.class
+cat\xtec\ioc\demo_aplicacio_escriptori\ui\UsuariForm.class
+cat\xtec\ioc\demo_aplicacio_escriptori\dto\LlibreCreateDTO.class
+cat\xtec\ioc\demo_aplicacio_escriptori\dto\UsuariUpdateDTO.class
+cat\xtec\ioc\demo_aplicacio_escriptori\dto\Llibre.class
+cat\xtec\ioc\demo_aplicacio_escriptori\dto\Usuari.class
