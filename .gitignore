@@ -1,0 +1,22 @@
+# --- Compilació i Binaris ---
+# No volem pujar el codi compilat, només el font
+bin/
+out/
+target/
+*.class
+*.exe
+*.jar
+
+# --- Entorns de Desenvolupament (IDEs) ---
+# Ignorem configuracions personals de l'editor
+.vscode/
+.idea/
+*.iml
+
+# --- Fitxers de Sistema ---
+.DS_Store
+Thumbs.db
+
+# --- Fitxers temporals o de log ---
+*.log
+tmp/
