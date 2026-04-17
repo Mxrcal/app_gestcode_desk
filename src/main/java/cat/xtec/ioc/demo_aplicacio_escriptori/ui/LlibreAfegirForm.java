@@ -1,8 +1,7 @@
 package cat.xtec.ioc.demo_aplicacio_escriptori.ui;
 
 import cat.xtec.ioc.demo_aplicacio_escriptori.api.ApiClient;
-import cat.xtec.ioc.demo_aplicacio_escriptori.dto.LlibreCreateDTO;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import cat.xtec.ioc.demo_aplicacio_escriptori.api.HttpResult;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.LineBorder;
@@ -10,7 +9,9 @@ import javax.swing.border.TitledBorder;
 import java.awt.*;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Pantalla per donar d'alta un nou Llibre al sistema.
@@ -42,6 +43,10 @@ public class LlibreAfegirForm extends JFrame {
     private JTextField  autorField;
     private JTextField  isbnField;
     private JTextField  anyPublicacioField;
+    private JTextField  genereField;
+    private JTextField  paginesField;
+    private JTextField  idiomaField;
+    private JTextField  quantitatField;
     private JTextArea   descripcioArea;
 
     // Botons
@@ -59,7 +64,7 @@ public class LlibreAfegirForm extends JFrame {
     public LlibreAfegirForm(ApiClient apiClient) {
         this.apiClient = apiClient;
         setTitle("BiblioGest - Afegir Nou Llibre");
-        setSize(560, 540);
+        setSize(560, 680);
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         setLocationRelativeTo(null);
         setResizable(false);
@@ -115,15 +120,19 @@ public class LlibreAfegirForm extends JFrame {
                 new Font("SansSerif", Font.BOLD, 12),
                 COLOR_VORA_LABEL));
 
-        // Camps en graella: 4 files x 2 columnes (etiqueta + camp)
-        JPanel gridPanel = new JPanel(new GridLayout(4, 2, 15, 10));
+        // Camps en graella: 8 files x 2 columnes (etiqueta + camp)
+        JPanel gridPanel = new JPanel(new GridLayout(8, 2, 15, 10));
         gridPanel.setBackground(COLOR_FONS);
         gridPanel.setBorder(new EmptyBorder(6, 10, 6, 10));
 
-        titolField        = crearTextField();
-        autorField        = crearTextField();
-        isbnField         = crearTextField();
+        titolField         = crearTextField();
+        autorField         = crearTextField();
+        isbnField          = crearTextField();
         anyPublicacioField = crearTextField();
+        genereField        = crearTextField();
+        paginesField       = crearTextField();
+        idiomaField        = crearTextField();
+        quantitatField     = crearTextField();
 
         gridPanel.add(crearLabel("Títol *"));
         gridPanel.add(titolField);
@@ -136,6 +145,18 @@ public class LlibreAfegirForm extends JFrame {
 
         gridPanel.add(crearLabel("Any de publicació *"));
         gridPanel.add(anyPublicacioField);
+
+        gridPanel.add(crearLabel("Gènere *"));
+        gridPanel.add(genereField);
+
+        gridPanel.add(crearLabel("Pàgines *"));
+        gridPanel.add(paginesField);
+
+        gridPanel.add(crearLabel("Idioma *"));
+        gridPanel.add(idiomaField);
+
+        gridPanel.add(crearLabel("Quantitat *"));
+        gridPanel.add(quantitatField);
 
         // Àrea de descripció (ocupa tota l'amplada a sota)
         JPanel descripcioPanel = new JPanel(new BorderLayout(0, 4));
@@ -203,20 +224,26 @@ public class LlibreAfegirForm extends JFrame {
         guardarButton.setEnabled(false);
 
         try {
-            LlibreCreateDTO nouLlibre = recollirDadesFormulari();
-            ObjectMapper mapper = new ObjectMapper();
-            String json = mapper.writeValueAsString(nouLlibre);
+            Map<String, String> camps = recollirDadesFormulari();
 
-            // TODO: Adaptar l'endpoint quan el backend estigui disponible
-            apiClient.post("/api/llibres", json);
+            // Debug: mostra el contingut que s'enviarà
+            System.out.println("[DEBUG] Enviant multipart POST /api/books → " + camps);
 
-            JOptionPane.showMessageDialog(
-                    this,
-                    "El llibre \"" + nouLlibre.titol + "\" s'ha afegit correctament.",
-                    "Èxit",
-                    JOptionPane.INFORMATION_MESSAGE);
+            HttpResult resultat = apiClient.postMultipart("/api/books", camps);
 
-            dispose(); // Tanquem el formulari un cop guardat
+            System.out.println("[DEBUG] POST /api/books → HTTP " + resultat.statusCode);
+            System.out.println("[DEBUG] Body resposta: " + resultat.body);
+
+            if (resultat.statusCode == 200 || resultat.statusCode == 201) {
+                JOptionPane.showMessageDialog(
+                        this,
+                        "El llibre \"" + camps.get("title") + "\" s'ha afegit correctament.",
+                        "Èxit",
+                        JOptionPane.INFORMATION_MESSAGE);
+                dispose();
+            } else {
+                mostrarEstatError("Error del servidor (" + resultat.statusCode + "): " + resultat.body);
+            }
 
         } catch (IOException ex) {
             mostrarEstatError("Error de connexió amb el servidor: " + ex.getMessage());
@@ -297,8 +324,62 @@ public class LlibreAfegirForm extends JFrame {
             }
         }
 
+        // Gènere obligatori
+        if (genereField.getText().isBlank()) {
+            marcarCampError(genereField);
+            errors.add("El gènere és obligatori.");
+        }
+
+        // Pàgines: obligatori i ha de ser un número positiu
+        String paginesText = paginesField.getText().trim();
+        if (paginesText.isBlank()) {
+            marcarCampError(paginesField);
+            errors.add("El nombre de pàgines és obligatori.");
+        } else {
+            try {
+                int pag = Integer.parseInt(paginesText);
+                if (pag <= 0) {
+                    marcarCampError(paginesField);
+                    errors.add("El nombre de pàgines ha de ser positiu.");
+                }
+            } catch (NumberFormatException e) {
+                marcarCampError(paginesField);
+                errors.add("El nombre de pàgines ha de ser un número vàlid.");
+            }
+        }
+
+        // Idioma obligatori
+        if (idiomaField.getText().isBlank()) {
+            marcarCampError(idiomaField);
+            errors.add("L'idioma és obligatori.");
+        }
+
+        // Quantitat: obligatori i ha de ser un número positiu
+        String quantitatText = quantitatField.getText().trim();
+        if (quantitatText.isBlank()) {
+            marcarCampError(quantitatField);
+            errors.add("La quantitat és obligatòria.");
+        } else {
+            try {
+                int qty = Integer.parseInt(quantitatText);
+                if (qty < 0) {
+                    marcarCampError(quantitatField);
+                    errors.add("La quantitat no pot ser negativa.");
+                }
+            } catch (NumberFormatException e) {
+                marcarCampError(quantitatField);
+                errors.add("La quantitat ha de ser un número vàlid.");
+            }
+        }
+
+        // Descripció obligatòria
+        if (descripcioArea.getText().isBlank()) {
+            descripcioArea.setBorder(VORA_ERROR);
+            errors.add("La descripció és obligatòria.");
+        }
+
         if (!errors.isEmpty()) {
-            mostrarEstatError(errors.get(0)); // Mostrem el primer error al label d'estat
+            mostrarEstatError(errors.get(0));
             return false;
         }
 
@@ -317,6 +398,11 @@ public class LlibreAfegirForm extends JFrame {
         autorField.setBorder(VORA_NORMAL);
         isbnField.setBorder(VORA_NORMAL);
         anyPublicacioField.setBorder(VORA_NORMAL);
+        genereField.setBorder(VORA_NORMAL);
+        paginesField.setBorder(VORA_NORMAL);
+        idiomaField.setBorder(VORA_NORMAL);
+        quantitatField.setBorder(VORA_NORMAL);
+        descripcioArea.setBorder(VORA_NORMAL);
         missatgeEstatLabel.setText(" ");
     }
 
@@ -330,16 +416,19 @@ public class LlibreAfegirForm extends JFrame {
     // Utilitats de recollida de dades
     // -------------------------------------------------------------------------
 
-    /** Crea el DTO de creació a partir dels valors actuals dels camps. */
-    private LlibreCreateDTO recollirDadesFormulari() {
-        LlibreCreateDTO dto = new LlibreCreateDTO();
-        dto.titol         = titolField.getText().trim();
-        dto.autor         = autorField.getText().trim();
-        dto.isbn          = isbnField.getText().trim();
-        dto.anyPublicacio = Integer.parseInt(anyPublicacioField.getText().trim());
-        String descripcio = descripcioArea.getText().trim();
-        dto.descripcio    = descripcio.isBlank() ? null : descripcio; // Opcional
-        return dto;
+    /** Recull els valors dels camps del formulari com a mapa per enviar-los via multipart. */
+    private Map<String, String> recollirDadesFormulari() {
+        Map<String, String> camps = new LinkedHashMap<>();
+        camps.put("title",       titolField.getText().trim());
+        camps.put("author",      autorField.getText().trim());
+        camps.put("isbn",        isbnField.getText().trim());
+        camps.put("year",        anyPublicacioField.getText().trim());
+        camps.put("genre",       genereField.getText().trim());
+        camps.put("pages",       paginesField.getText().trim());
+        camps.put("language",    idiomaField.getText().trim());
+        camps.put("quantity",    quantitatField.getText().trim());
+        camps.put("description", descripcioArea.getText().trim());
+        return camps;
     }
 
     // -------------------------------------------------------------------------

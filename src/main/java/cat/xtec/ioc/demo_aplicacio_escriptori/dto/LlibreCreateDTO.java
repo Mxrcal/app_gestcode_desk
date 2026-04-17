@@ -1,13 +1,10 @@
 package cat.xtec.ioc.demo_aplicacio_escriptori.dto;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-
 /**
- * DTO per a la creació d'un nou Llibre.
- * Només s'inclouen al JSON els camps que no siguin null.
+ * DTO per a la creació d'un nou Llibre via multipart/form-data.
+ * Els camps null s'ometran a l'enviament.
  * @author Marc Illescas
  */
-@JsonInclude(JsonInclude.Include.NON_NULL)
 public class LlibreCreateDTO {
 
     public String titol;
@@ -15,4 +12,9 @@ public class LlibreCreateDTO {
     public String isbn;
     public Integer anyPublicacio;
     public String descripcio;
+    // Camps addicionals requerits pel servidor (Tasca #53)
+    public String genere;
+    public Integer pagines;
+    public String idioma;
+    public Integer quantitat;
 }
