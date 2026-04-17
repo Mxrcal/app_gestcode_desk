@@ -26,15 +26,20 @@ public class Llibre {
     @JsonProperty("descripcio")
     public String descripcio;
 
+    @JsonProperty("genere")
+    public String genere;
+
+    @JsonProperty("pagines")
+    public Integer pagines;
+
+    @JsonProperty("idioma")
+    public String idioma;
+
+    @JsonProperty("quantitat")
+    public Integer quantitat;
+
     @Override
     public String toString() {
-        return "Llibre{" +
-                "id=" + id +
-                ", titol='" + titol + '\'' +
-                ", autor='" + autor + '\'' +
-                ", isbn='" + isbn + '\'' +
-                ", anyPublicacio=" + anyPublicacio +
-                ", descripcio='" + descripcio + '\'' +
-                '}';
+        return "Llibre{id=" + id + ", titol='" + titol + '\'' + ", isbn='" + isbn + "'}";
     }
 }
