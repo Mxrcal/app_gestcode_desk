@@ -43,7 +43,7 @@ public class UsuariForm extends JFrame {
     public UsuariForm(ApiClient apiClient) {
         this.apiClient = apiClient;
         setTitle("BiblioGest - Panell d'Usuari");
-        setSize(700, 570);
+        setSize(860, 570);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
         setResizable(false);
@@ -69,6 +69,10 @@ public class UsuariForm extends JFrame {
         estilitzarBoto(logoutButton, new Color(220, 53, 69)); // Vermell
         logoutButton.addActionListener(e -> ferLogout());
 
+        JButton veureLlibresButton = new JButton("☰ Llistat Llibres");
+        estilitzarBoto(veureLlibresButton, new Color(52, 58, 64)); // Gris fosc
+        veureLlibresButton.addActionListener(e -> new LlibreLlistatFrame(apiClient).setVisible(true));
+
         JButton afegirLlibreButton = new JButton("+ Afegir Llibre");
         estilitzarBoto(afegirLlibreButton, new Color(0, 123, 255)); // Blau
         afegirLlibreButton.addActionListener(e -> new LlibreAfegirForm(apiClient).setVisible(true));
@@ -83,6 +87,7 @@ public class UsuariForm extends JFrame {
 
         JPanel botoPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
         botoPanel.setBackground(Color.WHITE);
+        botoPanel.add(veureLlibresButton);
         botoPanel.add(afegirLlibreButton);
         botoPanel.add(editarLlibreButton);
         botoPanel.add(eliminarLlibreButton);
@@ -183,13 +188,13 @@ public class UsuariForm extends JFrame {
     }
 
     private void estilitzarBoto(JButton btn, Color color) {
-        btn.setFont(new Font("SansSerif", Font.BOLD, 13));
+        btn.setFont(new Font("SansSerif", Font.BOLD, 12));
         btn.setForeground(Color.WHITE);
         btn.setBackground(color);
         btn.setFocusPainted(false);
         btn.setBorderPainted(false);
         btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        btn.setPreferredSize(new Dimension(140, 35));
+        btn.setPreferredSize(new Dimension(130, 33));
     }
 
     // --- LÒGICA DE NEGOCI (Intacta de Jordi) ---
