@@ -1,64 +1,86 @@
 # Guia d'ús de la classe ApiClient
 
-La classe `ApiClient` serveix per connectar-se a una API REST des de Java, enviar dades i rebre respostes. Aquesta classe està pensada per ser fàcil d'utilitzar, especialment per persones sense experiència prèvia.
+La classe `ApiClient` centralitza totes les peticions HTTP cap a l'API REST, gestiona el token JWT automàticament i retorna les respostes de manera estructurada.
 
-## Què fa la classe ApiClient?
-- Permet fer peticions HTTP (POST i GET) a una API REST.
-- Gestiona el token JWT per autenticar-se.
-- Simplifica la connexió i l'enviament de dades.
+## Crear una instància
 
-## Com crear una instància
 ```java
-// Indica la ruta base de l'API (ex: http://localhost:8080)
-ApiClient client = new ApiClient("http://localhost:8080");
+ApiClient client = new ApiClient("http://10.2.233.78:8080");
 ```
 
-## Com fer login (POST)
+## Login i guardar el token JWT
+
 ```java
 String json = """
-{
-  \"usernameOrEmail\": \"administrador\",
-  \"password\": \"12345678\"
-}
-""";
+    {
+      "usernameOrEmail": "administrador",
+      "password": "12345678"
+    }
+    """;
 String resposta = client.post("/api/auth/login", json);
-System.out.println(resposta); // Mostra la resposta de l'API
+// Extreu el token de la resposta JSON i guarda'l:
+client.setJwtToken("el_token_rebut");
 ```
 
-## Com guardar el token JWT
-Després de fer login, pots guardar el token per fer peticions autenticades:
-```java
-client.setJwtToken("el_teu_token_jwt");
-```
+A partir d'aquí, totes les peticions inclouen automàticament la capçalera `Authorization: Bearer <token>`.
 
-## Com recuperar l'usuari loguejat (GET)
+## Recuperar dades (GET)
+
 ```java
 String resposta = client.get("/api/users/me");
-System.out.println(resposta); // Mostra la informació de l'usuari
+// resposta conté el JSON amb les dades de l'usuari
 ```
 
-## Explicació de cada mètode
-- `post(String endpoint, String jsonBody)`: Envia una petició POST a l'API. Pots passar el cos de la petició en format JSON.
-- `get(String endpoint)`: Envia una petició GET a l'API. Recupera dades de l'API.
-- `setJwtToken(String jwtToken)`: Guarda el token JWT per autenticar les peticions.
+## Crear un recurs amb multipart/form-data (POST)
+
+Els endpoints de llibres **no accepten JSON**, utilitzen `multipart/form-data`:
+
+```java
+Map<String, String> camps = new LinkedHashMap<>();
+camps.put("title", "El nom de la rosa");
+camps.put("author", "Umberto Eco");
+camps.put("isbn", "978-84-450-7135-5");
+camps.put("year", "1980");
+camps.put("genre", "Novel·la");
+camps.put("pages", "502");
+camps.put("language", "Català");
+camps.put("quantity", "3");
+camps.put("description", "Thriller medieval ambientat en un monestir.");
+
+HttpResult resultat = client.postMultipart("/api/books", camps);
+if (resultat.statusCode == 200 || resultat.statusCode == 201) {
+    System.out.println("Llibre creat correctament!");
+}
+```
+
+## Editar un recurs (PUT multipart)
+
+```java
+HttpResult resultat = client.putMultipart("/api/books/42", camps);
+```
+
+## Actualitzar un recurs amb JSON (PUT)
+
+```java
+String json = mapper.writeValueAsString(updateDTO);
+HttpResult resultat = client.putWithStatus("/api/users/5", json);
+if (resultat.statusCode == 200) {
+    System.out.println("Actualitzat correctament");
+}
+```
+
+## Eliminar un recurs (DELETE)
+
+```java
+HttpResult resultat = client.delete("/api/books/42");
+if (resultat.statusCode == 200 || resultat.statusCode == 204) {
+    System.out.println("Eliminat correctament");
+}
+```
 
 ## Bones pràctiques
-- Utilitza sempre el token JWT per endpoints protegits.
-- Gestiona els errors amb try-catch per evitar que l'aplicació es tanqui si hi ha problemes de connexió.
 
-## Exemple complet
-```java
-ApiClient client = new ApiClient("http://localhost:8080");
-String loginJson = "{\"usernameOrEmail\":\"administrador\",\"password\":\"12345678\"}";
-String loginResposta = client.post("/api/auth/login", loginJson);
-// Suposem que el token es troba a la resposta
-String token = "..."; // Extreu el token de la resposta
-client.setJwtToken(token);
-String usuariResposta = client.get("/api/users/me");
-System.out.println(usuariResposta);
-```
-
----
-
-### Comentaris a la classe
-La classe ApiClient inclou comentaris per ajudar-te a entendre cada part del codi. Si tens dubtes, llegeix els comentaris i segueix els exemples d'aquest document.
+- Utilitza els mètodes que retornen `HttpResult` (`postMultipart`, `putMultipart`, `putWithStatus`, `delete`) quan necessitis mostrar feedback a l'usuari o gestionar errors específics.
+- Utilitza `post` i `get` per a operacions senzilles on no necessites el codi d'estat (ex: login, consultar dades).
+- Comprova sempre el `statusCode` abans de processar el `body`.
+- Gestiona els errors amb `try-catch` per evitar que l'aplicació es tanqui si hi ha problemes de xarxa.
