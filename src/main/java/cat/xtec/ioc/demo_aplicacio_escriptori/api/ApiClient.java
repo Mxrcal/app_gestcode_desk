@@ -225,6 +225,27 @@ public class ApiClient {
     }
 
     /**
+     * Fa una petició DELETE a l'API i retorna el codi d'estat i el cos de la resposta.
+     * @param endpoint Ruta de l'endpoint (ex: /api/books/13)
+     */
+    public HttpResult delete(String endpoint) throws IOException {
+        HttpRequest.Builder builder = HttpRequest.newBuilder()
+                .uri(URI.create(baseUrl + endpoint))
+                .header("Accept", "application/json")
+                .DELETE();
+        if (jwtToken != null) {
+            builder.header("Authorization", "Bearer " + jwtToken);
+        }
+        try {
+            HttpResponse<String> response = client.send(builder.build(), HttpResponse.BodyHandlers.ofString());
+            return new HttpResult(response.statusCode(), response.body());
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IOException("Request interrupted", e);
+        }
+    }
+
+    /**
      * Fa una petició PUT i retorna el codi d'estat i el cos de la resposta.
      */
     public HttpResult putWithStatus(String endpoint, String jsonBody) throws IOException {

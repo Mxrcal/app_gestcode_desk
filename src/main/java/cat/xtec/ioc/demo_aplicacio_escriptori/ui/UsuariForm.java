@@ -77,10 +77,15 @@ public class UsuariForm extends JFrame {
         estilitzarBoto(editarLlibreButton, new Color(255, 153, 0)); // Taronja
         editarLlibreButton.addActionListener(e -> obrirEditarLlibre());
 
+        JButton eliminarLlibreButton = new JButton("🗑 Eliminar Llibre");
+        estilitzarBoto(eliminarLlibreButton, new Color(220, 53, 69)); // Vermell
+        eliminarLlibreButton.addActionListener(e -> eliminarLlibre());
+
         JPanel botoPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
         botoPanel.setBackground(Color.WHITE);
         botoPanel.add(afegirLlibreButton);
         botoPanel.add(editarLlibreButton);
+        botoPanel.add(eliminarLlibreButton);
         botoPanel.add(logoutButton);
 
         // Títol a dalt, botons a sota dins la capçalera
@@ -253,6 +258,61 @@ public class UsuariForm extends JFrame {
                     this,
                     "No s'ha pogut carregar el llibre amb ID " + id + ".\n" + ex.getMessage(),
                     "Error de connexió",
+                    JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    /**
+     * Demana l'ID del llibre, confirma amb l'usuari i envia DELETE /api/books/{id}.
+     */
+    private void eliminarLlibre() {
+        String idText = JOptionPane.showInputDialog(
+                this,
+                "Introdueix l'ID del llibre que vols eliminar:",
+                "Eliminar Llibre",
+                JOptionPane.QUESTION_MESSAGE);
+
+        if (idText == null || idText.isBlank()) return;
+
+        long id;
+        try {
+            id = Long.parseLong(idText.trim());
+        } catch (NumberFormatException e) {
+            JOptionPane.showMessageDialog(this, "L'ID ha de ser un número.", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        int confirmacio = JOptionPane.showConfirmDialog(
+                this,
+                "Segur que vols eliminar el llibre amb ID " + id + "?\nAquesta acció no es pot desfer.",
+                "Confirmar eliminació",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.WARNING_MESSAGE);
+
+        if (confirmacio != JOptionPane.YES_OPTION) return;
+
+        try {
+            HttpResult resultat = apiClient.delete("/api/books/" + id);
+
+            if (resultat.statusCode == 200 || resultat.statusCode == 204) {
+                JOptionPane.showMessageDialog(
+                        this,
+                        "El llibre amb ID " + id + " s'ha eliminat correctament.",
+                        "Èxit",
+                        JOptionPane.INFORMATION_MESSAGE);
+                infoUsuari.setText("Llibre ID " + id + " eliminat. Codi: " + resultat.statusCode);
+            } else {
+                JOptionPane.showMessageDialog(
+                        this,
+                        "Error del servidor (" + resultat.statusCode + "):\n" + resultat.body,
+                        "Error en eliminar",
+                        JOptionPane.ERROR_MESSAGE);
+            }
+        } catch (IOException ex) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "Error de connexió: " + ex.getMessage(),
+                    "Error",
                     JOptionPane.ERROR_MESSAGE);
         }
     }
