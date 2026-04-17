@@ -12,10 +12,20 @@ import java.awt.*;
 import java.io.IOException;
 
 /**
- * Pantalla principal de l'aplicació un cop l'usuari ha fet login.
- * Mostra les dades del perfil carregades des del servidor i permet
- * actualitzar-les.
- * També inclou l'opció obligatòria per tancar la sessió (Logout).
+ * Pantalla principal que es mostra just després de fer login.
+ * <p>
+ * Carrega les dades de l'usuari autenticat cridant GET /api/users/me
+ * i les mostra en un formulari editable. Només l'administrador pot
+ * canviar l'estat, el rol i si el compte és actiu.
+ * <p>
+ * Des d'aquí s'accedeix a tota la gestió de llibres: llistat, alta,
+ * edició, eliminació i comentaris. Els botons d'editar i eliminar
+ * demanen l'ID per teclat (solució temporal mentre no tenim el llistat
+ * integrat a aquesta mateixa pantalla).
+ * <p>
+ * El logout esborra el token JWT de l'ApiClient i torna al LoginForm.
+ *
+ * @author Marc Illescas
  */
 public class UsuariForm extends JFrame {
     private ApiClient apiClient;

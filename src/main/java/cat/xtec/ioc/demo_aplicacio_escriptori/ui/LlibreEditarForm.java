@@ -15,9 +15,18 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Pantalla per editar les dades d'un Llibre existent.
- * Envia la petició via PUT multipart/form-data a /api/books/{id}.
- * L'ISBN és de només lectura perquè és l'identificador únic del servidor.
+ * Formulari per editar un llibre existent (Tasques #55 i #56 del TEA3).
+ * <p>
+ * Rep un objecte {@link cat.xtec.ioc.demo_aplicacio_escriptori.dto.Llibre}
+ * amb les dades actuals i pre-omple tots els camps per facilitar l'edició.
+ * <p>
+ * El camp ISBN és de només lectura ({@code setEditable(false)}) perquè és
+ * l'identificador únic que el servidor usa per trobar el registre. Si el
+ * deixéssim editable, podríem canviar-lo per error i crear un conflicte.
+ * <p>
+ * Per enviar les dades usem PUT multipart/form-data (igual que al formulari
+ * d'alta), perquè el servidor del Jordi no accepta JSON en aquest endpoint.
+ * El gènere s'ha posat com a JComboBox per evitar errors d'escriptura.
  *
  * @author Marc Illescas
  */

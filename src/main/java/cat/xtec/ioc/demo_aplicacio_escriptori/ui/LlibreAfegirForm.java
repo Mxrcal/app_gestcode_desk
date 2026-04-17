@@ -14,9 +14,18 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Pantalla per donar d'alta un nou Llibre al sistema.
- * Inclou validació de camps obligatoris i mostra errors en línia.
- * Segueix el patró de presentació del projecte (Swing + ApiClient).
+ * Formulari per afegir un nou llibre al sistema (Tasques #52 i #53 del Taiga per al TEA3).
+ * <p>
+ * Vam descobrir que l'endpoint POST /api/books del servidor no accepta JSON
+ * sinó multipart/form-data. Per això no serialitzem a JSON amb Jackson sinó
+ * que construïm un mapa de camps i el passem a {@code ApiClient.postMultipart()}.
+ * <p>
+ * Un altre problema que vam trobar: el servidor espera el camp de l'any
+ * com a "year" i no com a "publishYear" com teníem inicialment. Ara ja
+ * enviem la clau correcta al mapa de camps.
+ * <p>
+ * La validació es fa localment (vores vermelles + missatge) per no fer
+ * crides innecessàries al servidor amb dades incompletes.
  *
  * @author Marc Illescas
  */

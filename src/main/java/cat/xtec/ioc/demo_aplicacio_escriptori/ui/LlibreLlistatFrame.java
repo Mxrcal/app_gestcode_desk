@@ -15,8 +15,20 @@ import java.awt.*;
 import java.io.IOException;
 
 /**
- * Pantalla de llistat de Llibres amb cercador en temps real.
- * Permet visualitzar, cercar, afegir, editar i eliminar llibres.
+ * Pantalla principal de gestió de llibres (Tasques #61 i #62 del TEA3).
+ * <p>
+ * Mostra tots els llibres en una JTable i permet cercar-ne en temps real
+ * per títol o autor sense fer noves crides al servidor (el filtre treballa
+ * sobre les dades ja carregades).
+ * <p>
+ * El problema que vam trobar en carregar les dades: el servidor no retorna
+ * una llista directa de llibres sinó un objecte de paginació de Spring amb
+ * un camp "content" que conté la llista real. Si mapejem directament a
+ * {@code Llibre[]}, Jackson peta amb un error START_OBJECT. La solució és
+ * llegir primer com a {@code JsonNode} i extreure el camp "content".
+ * <p>
+ * Des d'aquí es pot obrir el formulari d'alta, d'edició, eliminar un
+ * llibre o veure els comentaris, sempre a partir de la fila seleccionada.
  *
  * @author Marc Illescas
  */
@@ -221,10 +233,15 @@ public class LlibreLlistatFrame extends JFrame {
         estilitzarBoto(eliminarButton, COLOR_VERMELL);
         eliminarButton.addActionListener(e -> onEliminar());
 
+        JButton comentarisButton = new JButton("💬 Comentaris");
+        estilitzarBoto(comentarisButton, new Color(23, 162, 184)); // Cian
+        comentarisButton.addActionListener(e -> onVeureComentaris());
+
         botoPanel.add(refrescarButton);
         botoPanel.add(nouButton);
         botoPanel.add(editarButton);
         botoPanel.add(eliminarButton);
+        botoPanel.add(comentarisButton);
 
         peu.add(estatLabel,  BorderLayout.WEST);
         peu.add(botoPanel,   BorderLayout.EAST);
@@ -349,6 +366,25 @@ public class LlibreLlistatFrame extends JFrame {
                     "Error de connexió: " + ex.getMessage(),
                     "Error", JOptionPane.ERROR_MESSAGE);
         }
+    }
+
+    /**
+     * Obre el diàleg de comentaris per al llibre seleccionat a la taula.
+     */
+    private void onVeureComentaris() {
+        int fila = taula.getSelectedRow();
+        if (fila < 0) {
+            JOptionPane.showMessageDialog(this,
+                    "Selecciona un llibre de la taula per veure els seus comentaris.",
+                    "Cap selecció", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        int modelFila = taula.convertRowIndexToModel(fila);
+        Long   id    = (Long)   tableModel.getValueAt(modelFila, 0);
+        String titol = (String) tableModel.getValueAt(modelFila, 1);
+
+        new LlibreComentarisDialog(this, apiClient, id, titol).setVisible(true);
     }
 
     // -------------------------------------------------------------------------
