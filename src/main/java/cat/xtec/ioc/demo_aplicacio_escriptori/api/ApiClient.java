@@ -166,6 +166,43 @@ public class ApiClient {
     }
 
     /**
+     * Fa una petició PUT multipart/form-data i retorna el codi d'estat i el cos de la resposta.
+     * @param endpoint  Ruta de l'endpoint (ex: /api/books/13)
+     * @param camps     Mapa de nom→valor per als camps de text del formulari
+     */
+    public HttpResult putMultipart(String endpoint, Map<String, String> camps) throws IOException {
+        String boundary = "----BiblioGestBoundary" + UUID.randomUUID().toString().replace("-", "");
+
+        StringBuilder sb = new StringBuilder();
+        for (Map.Entry<String, String> entry : camps.entrySet()) {
+            if (entry.getValue() == null) continue;
+            sb.append("--").append(boundary).append("\r\n");
+            sb.append("Content-Disposition: form-data; name=\"").append(entry.getKey()).append("\"").append("\r\n");
+            sb.append("\r\n");
+            sb.append(entry.getValue()).append("\r\n");
+        }
+        sb.append("--").append(boundary).append("--").append("\r\n");
+
+        byte[] bodyBytes = sb.toString().getBytes(StandardCharsets.UTF_8);
+
+        HttpRequest.Builder builder = HttpRequest.newBuilder()
+                .uri(URI.create(baseUrl + endpoint))
+                .header("Content-Type", "multipart/form-data; boundary=" + boundary)
+                .header("Accept", "application/json")
+                .PUT(HttpRequest.BodyPublishers.ofByteArray(bodyBytes));
+        if (jwtToken != null) {
+            builder.header("Authorization", "Bearer " + jwtToken);
+        }
+        try {
+            HttpResponse<String> response = client.send(builder.build(), HttpResponse.BodyHandlers.ofString());
+            return new HttpResult(response.statusCode(), response.body());
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IOException("Request interrupted", e);
+        }
+    }
+
+    /**
      * Fa una petició POST i retorna el codi d'estat i el cos de la resposta.
      */
     public HttpResult postWithStatus(String endpoint, String jsonBody) throws IOException {

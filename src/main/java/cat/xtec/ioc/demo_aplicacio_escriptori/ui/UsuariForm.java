@@ -1,6 +1,7 @@
 package cat.xtec.ioc.demo_aplicacio_escriptori.ui;
 import cat.xtec.ioc.demo_aplicacio_escriptori.api.ApiClient;
 import cat.xtec.ioc.demo_aplicacio_escriptori.api.HttpResult;
+import cat.xtec.ioc.demo_aplicacio_escriptori.dto.Llibre;
 import cat.xtec.ioc.demo_aplicacio_escriptori.dto.Usuari;
 import cat.xtec.ioc.demo_aplicacio_escriptori.dto.UsuariUpdateDTO;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -42,7 +43,7 @@ public class UsuariForm extends JFrame {
     public UsuariForm(ApiClient apiClient) {
         this.apiClient = apiClient;
         setTitle("BiblioGest - Panell d'Usuari");
-        setSize(600, 550);
+        setSize(700, 570);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
         setResizable(false);
@@ -54,7 +55,7 @@ public class UsuariForm extends JFrame {
         // Panell principal fons blanc
         JPanel mainPanel = new JPanel(new BorderLayout(15, 15));
         mainPanel.setBackground(Color.WHITE);
-        mainPanel.setBorder(new EmptyBorder(20, 30, 20, 30));
+        mainPanel.setBorder(new EmptyBorder(30, 30, 20, 30));
 
         // --- CAPÇALERA (Títol i Logout) ---
         JPanel headerPanel = new JPanel(new BorderLayout());
@@ -72,13 +73,27 @@ public class UsuariForm extends JFrame {
         estilitzarBoto(afegirLlibreButton, new Color(0, 123, 255)); // Blau
         afegirLlibreButton.addActionListener(e -> new LlibreAfegirForm(apiClient).setVisible(true));
 
+        JButton editarLlibreButton = new JButton("✎ Editar Llibre");
+        estilitzarBoto(editarLlibreButton, new Color(255, 153, 0)); // Taronja
+        editarLlibreButton.addActionListener(e -> obrirEditarLlibre());
+
         JPanel botoPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
         botoPanel.setBackground(Color.WHITE);
         botoPanel.add(afegirLlibreButton);
+        botoPanel.add(editarLlibreButton);
         botoPanel.add(logoutButton);
 
-        headerPanel.add(titleLabel, BorderLayout.WEST);
-        headerPanel.add(botoPanel, BorderLayout.EAST);
+        // Títol a dalt, botons a sota dins la capçalera
+        JPanel headerTop = new JPanel(new BorderLayout());
+        headerTop.setBackground(Color.WHITE);
+        headerTop.add(titleLabel, BorderLayout.WEST);
+
+        JPanel headerPanel2 = new JPanel(new BorderLayout(0, 8));
+        headerPanel2.setBackground(Color.WHITE);
+        headerPanel2.add(headerTop, BorderLayout.NORTH);
+        headerPanel2.add(botoPanel, BorderLayout.SOUTH);
+
+        headerPanel.add(headerPanel2, BorderLayout.CENTER);
 
         // --- FORMULARI DADES ---
         JPanel formPanel = new JPanel(new GridLayout(4, 4, 15, 15)); // 4 files, 4 columnes (2 parells de label+input)
@@ -205,6 +220,40 @@ public class UsuariForm extends JFrame {
             infoUsuari.setText("Dades carregades amb èxit!\n" + usuari.toString());
         } catch (IOException ex) {
             infoUsuari.setText("Error al recuperar l'usuari des del servidor.");
+        }
+    }
+
+    /**
+     * Demana l'ID del llibre a editar, el carrega des del servidor i obre LlibreEditarForm.
+     */
+    private void obrirEditarLlibre() {
+        String idText = JOptionPane.showInputDialog(
+                this,
+                "Introdueix l'ID del llibre que vols editar:",
+                "Editar Llibre",
+                JOptionPane.QUESTION_MESSAGE);
+
+        if (idText == null || idText.isBlank()) return;
+
+        long id;
+        try {
+            id = Long.parseLong(idText.trim());
+        } catch (NumberFormatException e) {
+            JOptionPane.showMessageDialog(this, "L'ID ha de ser un número.", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        try {
+            String resposta = apiClient.get("/api/books/" + id);
+            ObjectMapper mapper = new ObjectMapper();
+            Llibre llibre = mapper.readValue(resposta, Llibre.class);
+            new LlibreEditarForm(apiClient, llibre).setVisible(true);
+        } catch (IOException ex) {
+            JOptionPane.showMessageDialog(
+                    this,
+                    "No s'ha pogut carregar el llibre amb ID " + id + ".\n" + ex.getMessage(),
+                    "Error de connexió",
+                    JOptionPane.ERROR_MESSAGE);
         }
     }
 

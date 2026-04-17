@@ -16,24 +16,30 @@ import java.util.Map;
 
 /**
  * Pantalla per editar les dades d'un Llibre existent.
- * L'ISBN és de només lectura (clau única del servidor).
- * Segueix el patró de presentació del projecte (Swing + ApiClient).
+ * Envia la petició via PUT multipart/form-data a /api/books/{id}.
+ * L'ISBN és de només lectura perquè és l'identificador únic del servidor.
  *
  * @author Marc Illescas
  */
 public class LlibreEditarForm extends JFrame {
 
+    // --- Gèneres disponibles al combo ---
+    private static final String[] GENERES = {
+        "Ficció", "No-Ficció", "Ciència-Ficció", "Fantasia", "Misteri",
+        "Thriller", "Romance", "Terror", "Biografia", "Història",
+        "Ciència", "Tecnologia", "Art", "Poesia", "Infantil", "Altres"
+    };
+
     // --- Colors del projecte ---
-    private static final Color COLOR_FONS       = Color.WHITE;
-    private static final Color COLOR_TITOL      = new Color(33, 37, 41);
-    private static final Color COLOR_SUBTITOL   = new Color(108, 117, 125);
-    private static final Color COLOR_VORA       = new Color(200, 200, 200);
-    private static final Color COLOR_VORA_LABEL = new Color(100, 100, 100);
-    private static final Color COLOR_GUARDAR    = new Color(40, 167, 69);
-    private static final Color COLOR_CANCELLAR  = new Color(108, 117, 125);
-    private static final Color COLOR_ERROR      = new Color(220, 53, 69);
-    // Fons gris per indicar camp no editable
-    private static final Color COLOR_FONS_BLOCAT = new Color(233, 236, 239);
+    private static final Color COLOR_FONS        = Color.WHITE;
+    private static final Color COLOR_TITOL       = new Color(33, 37, 41);
+    private static final Color COLOR_SUBTITOL    = new Color(108, 117, 125);
+    private static final Color COLOR_VORA        = new Color(200, 200, 200);
+    private static final Color COLOR_VORA_LABEL  = new Color(100, 100, 100);
+    private static final Color COLOR_GUARDAR     = new Color(40, 167, 69);
+    private static final Color COLOR_CANCELLAR   = new Color(108, 117, 125);
+    private static final Color COLOR_ERROR       = new Color(220, 53, 69);
+    private static final Color COLOR_FONS_BLOCAT = new Color(240, 240, 240);
 
     private static final LineBorder VORA_NORMAL = new LineBorder(new Color(206, 212, 218), 1);
     private static final LineBorder VORA_ERROR  = new LineBorder(COLOR_ERROR, 2);
@@ -41,35 +47,35 @@ public class LlibreEditarForm extends JFrame {
     private final ApiClient apiClient;
     private final Llibre    llibre;
 
-    // Camps del formulari
-    private JTextField titolField;
-    private JTextField autorField;
-    private JTextField isbnField;        // No editable
-    private JTextField anyPublicacioField;
-    private JTextField genereField;
-    private JTextField paginesField;
-    private JTextField idiomaField;
-    private JTextField quantitatField;
-    private JTextArea  descripcioArea;
+    // --- Camps del formulari ---
+    private JTextField  titolField;
+    private JTextField  autorField;
+    private JTextField  isbnField;
+    private JTextField  anyPublicacioField;
+    private JComboBox<String> genereCombo;
+    private JTextField  paginesField;
+    private JTextField  idiomaField;
+    private JTextField  quantitatField;
+    private JTextArea   descripcioArea;
 
-    // Botons
+    // --- Botons ---
     private JButton guardarButton;
     private JButton cancellarButton;
 
-    // Àrea d'estat / missatges
+    // --- Àrea d'estat ---
     private JLabel missatgeEstatLabel;
 
     /**
      * Constructor de la pantalla d'edició de Llibres.
      *
      * @param apiClient Client HTTP autenticat amb el token JWT.
-     * @param llibre    Dades actuals del llibre que es vol editar.
+     * @param llibre    Objecte amb les dades actuals del llibre a editar.
      */
     public LlibreEditarForm(ApiClient apiClient, Llibre llibre) {
         this.apiClient = apiClient;
         this.llibre    = llibre;
         setTitle("BiblioGest - Editar Llibre");
-        setSize(560, 680);
+        setSize(560, 700);
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         setLocationRelativeTo(null);
         setResizable(false);
@@ -92,6 +98,9 @@ public class LlibreEditarForm extends JFrame {
         add(mainPanel);
     }
 
+    /**
+     * Capçalera amb títol "Editar Llibre" i subtítol informatiu.
+     */
     private JPanel construirCapcalera() {
         JPanel headerPanel = new JPanel();
         headerPanel.setLayout(new BoxLayout(headerPanel, BoxLayout.Y_AXIS));
@@ -112,6 +121,9 @@ public class LlibreEditarForm extends JFrame {
         return headerPanel;
     }
 
+    /**
+     * Formulari central amb tots els camps pre-carregats amb les dades del llibre.
+     */
     private JPanel construirFormulari() {
         JPanel wrapperPanel = new JPanel(new BorderLayout(0, 10));
         wrapperPanel.setBackground(COLOR_FONS);
@@ -122,45 +134,43 @@ public class LlibreEditarForm extends JFrame {
                 new Font("SansSerif", Font.BOLD, 12),
                 COLOR_VORA_LABEL));
 
+        // Graella: 8 files × 2 columnes
         JPanel gridPanel = new JPanel(new GridLayout(8, 2, 15, 10));
         gridPanel.setBackground(COLOR_FONS);
         gridPanel.setBorder(new EmptyBorder(6, 10, 6, 10));
 
-        // Creem i pre-omplim tots els camps
-        titolField         = crearTextField(valOrBuit(llibre.titol));
-        isbnField          = crearCampBlocat(valOrBuit(llibre.isbn));
-        autorField         = crearTextField(valOrBuit(llibre.autor));
+        // Pre-càrrega de tots els camps amb les dades rebudes
+        titolField         = crearTextField(orBuit(llibre.titol));
+        autorField         = crearTextField(orBuit(llibre.autor));
+        isbnField          = crearCampBlocat(orBuit(llibre.isbn));
         anyPublicacioField = crearTextField(llibre.anyPublicacio != null ? String.valueOf(llibre.anyPublicacio) : "");
-        genereField        = crearTextField(valOrBuit(llibre.genere));
-        paginesField       = crearTextField(llibre.pagines != null ? String.valueOf(llibre.pagines) : "");
-        idiomaField        = crearTextField(valOrBuit(llibre.idioma));
-        quantitatField     = crearTextField(llibre.quantitat != null ? String.valueOf(llibre.quantitat) : "");
+        paginesField       = crearTextField(llibre.pagines    != null ? String.valueOf(llibre.pagines)    : "");
+        idiomaField        = crearTextField(orBuit(llibre.idioma));
+        quantitatField     = crearTextField(llibre.quantitat  != null ? String.valueOf(llibre.quantitat)  : "");
 
-        gridPanel.add(crearLabel("Títol *"));
-        gridPanel.add(titolField);
+        // JComboBox de gènere pre-seleccionat
+        genereCombo = new JComboBox<>(GENERES);
+        genereCombo.setFont(new Font("SansSerif", Font.PLAIN, 13));
+        genereCombo.setBackground(COLOR_FONS);
+        if (llibre.genere != null) {
+            for (int i = 0; i < GENERES.length; i++) {
+                if (GENERES[i].equalsIgnoreCase(llibre.genere)) {
+                    genereCombo.setSelectedIndex(i);
+                    break;
+                }
+            }
+        }
 
-        gridPanel.add(crearLabel("Autor *"));
-        gridPanel.add(autorField);
+        gridPanel.add(crearLabel("Títol *"));          gridPanel.add(titolField);
+        gridPanel.add(crearLabel("Autor *"));          gridPanel.add(autorField);
+        gridPanel.add(crearLabel("ISBN (no modificable)")); gridPanel.add(isbnField);
+        gridPanel.add(crearLabel("Any de publicació *")); gridPanel.add(anyPublicacioField);
+        gridPanel.add(crearLabel("Gènere *"));         gridPanel.add(genereCombo);
+        gridPanel.add(crearLabel("Pàgines *"));        gridPanel.add(paginesField);
+        gridPanel.add(crearLabel("Idioma *"));         gridPanel.add(idiomaField);
+        gridPanel.add(crearLabel("Quantitat *"));      gridPanel.add(quantitatField);
 
-        gridPanel.add(crearLabel("ISBN (no modificable)"));
-        gridPanel.add(isbnField);
-
-        gridPanel.add(crearLabel("Any de publicació *"));
-        gridPanel.add(anyPublicacioField);
-
-        gridPanel.add(crearLabel("Gènere *"));
-        gridPanel.add(genereField);
-
-        gridPanel.add(crearLabel("Pàgines *"));
-        gridPanel.add(paginesField);
-
-        gridPanel.add(crearLabel("Idioma *"));
-        gridPanel.add(idiomaField);
-
-        gridPanel.add(crearLabel("Quantitat *"));
-        gridPanel.add(quantitatField);
-
-        // Àrea de descripció pre-omplerta
+        // Àrea de descripció pre-carregada
         JPanel descripcioPanel = new JPanel(new BorderLayout(0, 4));
         descripcioPanel.setBackground(COLOR_FONS);
         descripcioPanel.setBorder(new EmptyBorder(2, 10, 6, 10));
@@ -170,7 +180,7 @@ public class LlibreEditarForm extends JFrame {
         descripcioArea.setLineWrap(true);
         descripcioArea.setWrapStyleWord(true);
         descripcioArea.setBorder(VORA_NORMAL);
-        descripcioArea.setText(valOrBuit(llibre.descripcio));
+        descripcioArea.setText(orBuit(llibre.descripcio));
 
         JScrollPane scrollDescripcio = new JScrollPane(descripcioArea);
         scrollDescripcio.setBorder(null);
@@ -190,6 +200,9 @@ public class LlibreEditarForm extends JFrame {
         return wrapperPanel;
     }
 
+    /**
+     * Panell inferior amb els botons Cancel·lar i Guardar Canvis.
+     */
     private JPanel construirPanellBotons() {
         JPanel panellBotons = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
         panellBotons.setBackground(COLOR_FONS);
@@ -210,25 +223,27 @@ public class LlibreEditarForm extends JFrame {
     }
 
     // -------------------------------------------------------------------------
-    // Accions dels botons
+    // Lògica d'enviament (Tasca #56)
     // -------------------------------------------------------------------------
 
+    /**
+     * Valida els camps, construeix el mapa multipart i envia PUT /api/books/{id}.
+     * Mostra "Llibre actualitzat" i tanca si el servidor retorna 200 OK.
+     */
     private void onGuardar() {
-        if (!validarCamps()) {
-            return;
-        }
+        if (!validarCamps()) return;
 
         guardarButton.setText("Guardant...");
         guardarButton.setEnabled(false);
 
         try {
             Map<String, String> camps = recollirDadesFormulari();
-            HttpResult resultat = apiClient.postMultipart("/api/books/" + llibre.id, camps);
+            HttpResult resultat = apiClient.putMultipart("/api/books/" + llibre.id, camps);
 
             if (resultat.statusCode == 200 || resultat.statusCode == 201) {
                 JOptionPane.showMessageDialog(
                         this,
-                        "El llibre \"" + camps.get("title") + "\" s'ha actualitzat correctament.",
+                        "Llibre actualitzat correctament.",
                         "Èxit",
                         JOptionPane.INFORMATION_MESSAGE);
                 dispose();
@@ -248,6 +263,11 @@ public class LlibreEditarForm extends JFrame {
     // Validació
     // -------------------------------------------------------------------------
 
+    /**
+     * Comprova que tots els camps obligatoris estan omplerts i els formats són correctes.
+     *
+     * @return {@code true} si tot és vàlid.
+     */
     private boolean validarCamps() {
         List<String> errors = new ArrayList<>();
         restablirVores();
@@ -277,11 +297,6 @@ public class LlibreEditarForm extends JFrame {
                 marcarCampError(anyPublicacioField);
                 errors.add("L'any de publicació ha de ser un número vàlid.");
             }
-        }
-
-        if (genereField.getText().isBlank()) {
-            marcarCampError(genereField);
-            errors.add("El gènere és obligatori.");
         }
 
         String paginesText = paginesField.getText().trim();
@@ -345,7 +360,6 @@ public class LlibreEditarForm extends JFrame {
         titolField.setBorder(VORA_NORMAL);
         autorField.setBorder(VORA_NORMAL);
         anyPublicacioField.setBorder(VORA_NORMAL);
-        genereField.setBorder(VORA_NORMAL);
         paginesField.setBorder(VORA_NORMAL);
         idiomaField.setBorder(VORA_NORMAL);
         quantitatField.setBorder(VORA_NORMAL);
@@ -359,16 +373,19 @@ public class LlibreEditarForm extends JFrame {
     }
 
     // -------------------------------------------------------------------------
-    // Utilitats de recollida de dades
+    // Recollida de dades
     // -------------------------------------------------------------------------
 
+    /**
+     * Construeix el mapa de camps multipart amb els noms exactes que espera el servidor.
+     */
     private Map<String, String> recollirDadesFormulari() {
         Map<String, String> camps = new LinkedHashMap<>();
         camps.put("title",       titolField.getText().trim());
         camps.put("author",      autorField.getText().trim());
         camps.put("isbn",        isbnField.getText().trim());
         camps.put("year",        anyPublicacioField.getText().trim());
-        camps.put("genre",       genereField.getText().trim());
+        camps.put("genre",       (String) genereCombo.getSelectedItem());
         camps.put("pages",       paginesField.getText().trim());
         camps.put("language",    idiomaField.getText().trim());
         camps.put("quantity",    quantitatField.getText().trim());
@@ -393,7 +410,9 @@ public class LlibreEditarForm extends JFrame {
         return tf;
     }
 
-    /** Camp de text no editable (ISBN): fons gris i cursor de text desactivat. */
+    /**
+     * Camp de text no editable per a l'ISBN: fons gris i text apagat per indicar que és de només lectura.
+     */
     private JTextField crearCampBlocat(String valor) {
         JTextField tf = new JTextField(valor);
         tf.setFont(new Font("SansSerif", Font.PLAIN, 13));
@@ -414,7 +433,7 @@ public class LlibreEditarForm extends JFrame {
         btn.setPreferredSize(new Dimension(120, 35));
     }
 
-    private String valOrBuit(String val) {
+    private String orBuit(String val) {
         return val != null ? val : "";
     }
 }
