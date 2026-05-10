@@ -12,9 +12,10 @@ import java.util.UUID;
 /**
  * Classe encarregada de fer totes les crides HTTP a l'API REST del servidor.
  * <p>
- * L'enunciat del TEA3 demana que l'aplicació es comuniqui amb el backend
- * del Jordi (http://10.2.233.78:8080). Aquesta classe centralitza totes
- * les peticions (GET, POST, PUT, DELETE) per no repetir codi a cada pantalla.
+ * En el TEA4 l'aplicació es comunica amb el backend a través de la URL HTTPS
+ * configurada a {@code Demo_aplicacio_escriptori.BASE_URL}. Aquesta classe
+ * centralitza totes les peticions (GET, POST, PUT, DELETE) per no repetir
+ * codi a cada pantalla.
  * <p>
  * Gestió del Token JWT: després del login, el servidor retorna un token que
  * cal enviar a cada petició protegida a la capçalera "Authorization: Bearer ...".
@@ -30,9 +31,9 @@ public class ApiClient {
 
     /**
      * Inicialitza el client amb la URL base del servidor.
-     * Per al TEA3, la URL és http://10.2.233.78:8080.
+     * En el TEA4, aquesta URL apunta al bastió HTTPS d'IsardVDI.
      *
-     * @param baseUrl URL base de l'API sense barra final (ex: "http://10.2.233.78:8080")
+     * @param baseUrl URL base de l'API sense barra final
      */
     public ApiClient(String baseUrl) {
         this.baseUrl = baseUrl;

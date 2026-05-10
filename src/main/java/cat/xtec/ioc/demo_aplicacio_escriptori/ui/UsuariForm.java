@@ -53,10 +53,11 @@ public class UsuariForm extends JFrame {
     public UsuariForm(ApiClient apiClient) {
         this.apiClient = apiClient;
         setTitle("BiblioGest - Panell d'Usuari");
-        setSize(940, 570);
+        setSize(1280, 700);
+        setMinimumSize(new Dimension(1180, 650));
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
-        setResizable(false);
+        setResizable(true);
         initComponents();
         carregarUsuari();
     }
@@ -79,7 +80,7 @@ public class UsuariForm extends JFrame {
         estilitzarBoto(logoutButton, new Color(220, 53, 69)); // Vermell
         logoutButton.addActionListener(e -> ferLogout());
 
-        JButton veureLlibresButton = new JButton("☰ Llistat Llibres");
+        JButton veureLlibresButton = new JButton("☰ Llistat de Llibres");
         estilitzarBoto(veureLlibresButton, new Color(52, 58, 64)); // Gris fosc
         veureLlibresButton.addActionListener(e -> new LlibreLlistatFrame(apiClient).setVisible(true));
 
@@ -95,51 +96,51 @@ public class UsuariForm extends JFrame {
         estilitzarBoto(eliminarLlibreButton, new Color(220, 53, 69)); // Vermell
         eliminarLlibreButton.addActionListener(e -> eliminarLlibre());
 
-        JButton prestecButton = new JButton("📚 Préstecs");
+        JButton prestecButton = new JButton("📚 Llistat de Préstecs");
         estilitzarBoto(prestecButton, new Color(23, 162, 184)); // Cian
         prestecButton.addActionListener(e -> {
             boolean esAdmin = usuari != null && "ADMIN".equals(usuari.role);
             new PrestecLlistatFrame(apiClient, esAdmin).setVisible(true);
         });
 
-        JButton historialButton = new JButton("🕘 Historial");
+        JButton historialButton = new JButton("🕘 Historial de Préstecs");
         estilitzarBoto(historialButton, new Color(108, 117, 125));
         historialButton.addActionListener(e -> {
             boolean esAdmin = usuari != null && "ADMIN".equals(usuari.role);
             new HistorialPrestecFrame(apiClient, esAdmin).setVisible(true);
         });
 
-        JButton solicitudButton = new JButton("+ Sol·licitar");
+        JButton solicitudButton = new JButton("+ Sol·licitar Préstec");
         estilitzarBoto(solicitudButton, new Color(0, 123, 255));
         solicitudButton.addActionListener(e ->
             new PrestecSolicitudDialog((Frame) SwingUtilities.getWindowAncestor(this),
                 apiClient, null).setVisible(true));
 
-        JButton devolucioButton = new JButton("↩ Retornar");
+        JButton devolucioButton = new JButton("↩ Retornar Préstec");
         estilitzarBoto(devolucioButton, new Color(40, 167, 69));
         devolucioButton.addActionListener(e ->
             new PrestecDevolucioDialog((Frame) SwingUtilities.getWindowAncestor(this),
                 apiClient).setVisible(true));
 
-        JButton recordatoriButton = new JButton("⏰ Recordatori");
+        JButton recordatoriButton = new JButton("⏰ Recordatoris");
         estilitzarBoto(recordatoriButton, new Color(255, 153, 0));
         recordatoriButton.addActionListener(e ->
             new PrestecRecordatoriFrame(apiClient).setVisible(true));
 
-        JButton seguimentButton = new JButton("📊 Seguiment");
+        JButton seguimentButton = new JButton("📊 Seguiment de Préstecs");
         estilitzarBoto(seguimentButton, new Color(111, 66, 193));
         seguimentButton.addActionListener(e -> {
             boolean esAdmin = usuari != null && "ADMIN".equals(usuari.role);
             new PrestecSeguimentFrame(apiClient, esAdmin).setVisible(true);
         });
 
-        JButton disponibilitatButton = new JButton("📋 Disponibilitat");
+        JButton disponibilitatButton = new JButton("📋 Disponibilitat de Llibres");
         estilitzarBoto(disponibilitatButton, new Color(32, 201, 151)); // Verd menta
         disponibilitatButton.addActionListener(e ->
             new DisponibilitatLlibreFrame(apiClient).setVisible(true));
 
         // --- Fila 1: Llibres ---
-        JPanel botoFilaLlibres = new JPanel(new FlowLayout(FlowLayout.RIGHT, 6, 2));
+        JPanel botoFilaLlibres = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 3));
         botoFilaLlibres.setBackground(Color.WHITE);
         botoFilaLlibres.add(disponibilitatButton);
         botoFilaLlibres.add(veureLlibresButton);
@@ -149,7 +150,7 @@ public class UsuariForm extends JFrame {
         botoFilaLlibres.add(logoutButton);
 
         // --- Fila 2: Préstecs ---
-        JPanel botoFilaPrestecs = new JPanel(new FlowLayout(FlowLayout.RIGHT, 6, 2));
+        JPanel botoFilaPrestecs = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 3));
         botoFilaPrestecs.setBackground(Color.WHITE);
         botoFilaPrestecs.add(solicitudButton);
         botoFilaPrestecs.add(devolucioButton);
@@ -264,7 +265,9 @@ public class UsuariForm extends JFrame {
         btn.setFocusPainted(false);
         btn.setBorderPainted(false);
         btn.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        btn.setPreferredSize(new Dimension(118, 33));
+        btn.setMargin(new Insets(6, 14, 6, 14));
+        Dimension preferred = btn.getPreferredSize();
+        btn.setPreferredSize(new Dimension(Math.max(145, preferred.width + 18), 36));
     }
 
     // --- LÒGICA DE NEGOCI (Intacta de Jordi) ---

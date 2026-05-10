@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Formulari per afegir un nou llibre al sistema (Tasques #52 i #53 del Taiga per al TEA3).
+ * Formulari per afegir un nou llibre al sistema.
  * <p>
  * Vam descobrir que l'endpoint POST /api/books del servidor no accepta JSON
  * sinó multipart/form-data. Per això no serialitzem a JSON amb Jackson sinó
@@ -235,13 +235,7 @@ public class LlibreAfegirForm extends JFrame {
         try {
             Map<String, String> camps = recollirDadesFormulari();
 
-            // Debug: mostra el contingut que s'enviarà
-            System.out.println("[DEBUG] Enviant multipart POST /api/books → " + camps);
-
             HttpResult resultat = apiClient.postMultipart("/api/books", camps);
-
-            System.out.println("[DEBUG] POST /api/books → HTTP " + resultat.statusCode);
-            System.out.println("[DEBUG] Body resposta: " + resultat.body);
 
             if (resultat.statusCode == 200 || resultat.statusCode == 201) {
                 JOptionPane.showMessageDialog(

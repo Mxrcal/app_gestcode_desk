@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Formulari per editar un llibre existent (Tasques #55 i #56 del TEA3).
+ * Formulari per editar un llibre existent.
  * <p>
  * Rep un objecte {@link cat.xtec.ioc.demo_aplicacio_escriptori.dto.Llibre}
  * amb les dades actuals i pre-omple tots els camps per facilitar l'edició.

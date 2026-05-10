@@ -12,6 +12,8 @@ import java.awt.*;
 import java.io.IOException;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
@@ -43,9 +45,6 @@ public class PrestecRecordatoriFrame extends JFrame {
     private static final Color COLOR_TARONJA  = new Color(255, 153, 0);
     private static final Color COLOR_GROC     = new Color(255, 193, 7);
     private static final Color COLOR_GRIS     = new Color(108, 117, 125);
-
-    private static final DateTimeFormatter FMT = DateTimeFormatter
-            .ofPattern("dd/MM/yyyy").withZone(ZoneId.systemDefault());
 
     private final ApiClient apiClient;
     private JPanel cardsPanel;
@@ -96,6 +95,7 @@ public class PrestecRecordatoriFrame extends JFrame {
         llegendaPanel.add(crearLlegendaItem("● Vençut / ≤2 dies", COLOR_VERMELL));
         llegendaPanel.add(crearLlegendaItem("● 3-5 dies", COLOR_TARONJA));
         llegendaPanel.add(crearLlegendaItem("● 6-7 dies", COLOR_GROC));
+        llegendaPanel.add(crearLlegendaItem("● +7 dies", COLOR_VERD));
 
         JPanel topPanel = new JPanel(new BorderLayout(0, 4));
         topPanel.setBackground(COLOR_FONS);
@@ -151,27 +151,33 @@ public class PrestecRecordatoriFrame extends JFrame {
         estatLabel.setText("Carregant recordatoris...");
 
         List<Prestec> avisos = new ArrayList<>();
+        ObjectMapper mapper = new ObjectMapper();
 
         // Vençuts
         try {
             String json = apiClient.get("/api/loans/my-loans/overdue");
-            ObjectMapper mapper = new ObjectMapper();
-            JsonNode arrel = mapper.readTree(json);
-            JsonNode content = arrel.has("content") ? arrel.get("content") : arrel;
-            Prestec[] prestecs = mapper.treeToValue(content, Prestec[].class);
-            for (Prestec p : prestecs) avisos.add(p);
+            Prestec[] prestecs = parsePrestecs(mapper, json);
+            for (Prestec p : prestecs) afegirSiNoExisteix(avisos, p);
         } catch (IOException ignored) {}
 
         // Propers a vèncer (evitem duplicats per ID)
         try {
             String json = apiClient.get("/api/loans/my-loans/near-due");
-            ObjectMapper mapper = new ObjectMapper();
-            JsonNode arrel = mapper.readTree(json);
-            JsonNode content = arrel.has("content") ? arrel.get("content") : arrel;
-            Prestec[] prestecs = mapper.treeToValue(content, Prestec[].class);
+            Prestec[] prestecs = parsePrestecs(mapper, json);
             for (Prestec p : prestecs) {
-                boolean jaExisteix = avisos.stream().anyMatch(a -> a.id != null && a.id.equals(p.id));
-                if (!jaExisteix) avisos.add(p);
+                afegirSiNoExisteix(avisos, p);
+            }
+        } catch (IOException ignored) {}
+
+        // Préstecs actius encara no urgents. Així el botó també mostra els préstecs
+        // actuals encara que el backend no els consideri "near-due".
+        try {
+            String json = apiClient.get("/api/loans/my-loans");
+            Prestec[] prestecs = parsePrestecs(mapper, json);
+            for (Prestec p : prestecs) {
+                if ("ACTIU".equalsIgnoreCase(p.status) || "VENÇUT".equalsIgnoreCase(p.status)) {
+                    afegirSiNoExisteix(avisos, p);
+                }
             }
         } catch (IOException ignored) {}
 
@@ -191,8 +197,8 @@ public class PrestecRecordatoriFrame extends JFrame {
         }
 
         estatLabel.setText(avisos.isEmpty()
-            ? "Cap avís pendent"
-            : avisos.size() + " avís(os) pendent(s)");
+            ? "Cap préstec pendent"
+            : avisos.size() + " préstec(s) pendent(s)");
 
         cardsPanel.revalidate();
         cardsPanel.repaint();
@@ -242,9 +248,11 @@ public class PrestecRecordatoriFrame extends JFrame {
      */
     private JPanel crearTarjeta(Prestec p) {
         long dies = calcularDies(p.dueDate);
-        Color colorAccent = dies < 0 || dies <= 2 ? COLOR_VERMELL
+        Color colorAccent = dies == Long.MAX_VALUE ? COLOR_VERD
+                          : dies < 0 || dies <= 2 ? COLOR_VERMELL
                           : dies <= 5             ? COLOR_TARONJA
-                                                  : COLOR_GROC;
+                          : dies <= 7             ? COLOR_GROC
+                                                  : COLOR_VERD;
 
         JPanel card = new JPanel(new BorderLayout(12, 0));
         card.setBackground(Color.WHITE);
@@ -272,7 +280,10 @@ public class PrestecRecordatoriFrame extends JFrame {
         lblDates.setForeground(COLOR_SUBTITOL);
 
         JLabel lblAvís;
-        if (dies < 0) {
+        if (dies == Long.MAX_VALUE) {
+            lblAvís = new JLabel("ℹ Data límit no disponible — revisa el préstec quan puguis");
+            lblAvís.setForeground(COLOR_VERD);
+        } else if (dies < 0) {
             lblAvís = new JLabel("⚠ VENÇUT fa " + Math.abs(dies) + " dia(es) — Retorna'l immediatament!");
             lblAvís.setForeground(COLOR_VERMELL);
         } else if (dies == 0) {
@@ -294,22 +305,48 @@ public class PrestecRecordatoriFrame extends JFrame {
         return card;
     }
 
+    private Prestec[] parsePrestecs(ObjectMapper mapper, String json) throws IOException {
+        JsonNode arrel = mapper.readTree(json);
+        JsonNode content = arrel.has("content") ? arrel.get("content") : arrel;
+        return mapper.treeToValue(content, Prestec[].class);
+    }
+
+    private void afegirSiNoExisteix(List<Prestec> avisos, Prestec prestec) {
+        boolean jaExisteix = avisos.stream()
+                .anyMatch(a -> a.id != null && a.id.equals(prestec.id));
+        if (!jaExisteix) avisos.add(prestec);
+    }
+
     // -------------------------------------------------------------------------
     // Utils
     // -------------------------------------------------------------------------
 
     private long calcularDies(String iso) {
-        if (iso == null || iso.isBlank()) return 0;
+        if (iso == null || iso.isBlank()) return Long.MAX_VALUE;
         try {
-            LocalDate due = Instant.parse(iso).atZone(ZoneId.systemDefault()).toLocalDate();
+            LocalDate due = parseDataPrestec(iso);
             return ChronoUnit.DAYS.between(LocalDate.now(), due);
-        } catch (Exception e) { return 0; }
+        } catch (Exception e) { return Long.MAX_VALUE; }
     }
 
     private String formatData(String iso) {
         if (iso == null || iso.isBlank()) return "—";
-        try { return FMT.format(Instant.parse(iso)); }
+        try { return parseDataPrestec(iso).format(DateTimeFormatter.ofPattern("dd/MM/yyyy")); }
         catch (Exception e) { return iso.substring(0, Math.min(10, iso.length())); }
+    }
+
+    private LocalDate parseDataPrestec(String iso) {
+        String valor = iso.trim();
+        try {
+            return Instant.parse(valor).atZone(ZoneId.systemDefault()).toLocalDate();
+        } catch (Exception ignored) {}
+        try {
+            return OffsetDateTime.parse(valor).atZoneSameInstant(ZoneId.systemDefault()).toLocalDate();
+        } catch (Exception ignored) {}
+        try {
+            return LocalDateTime.parse(valor).toLocalDate();
+        } catch (Exception ignored) {}
+        return LocalDate.parse(valor.substring(0, Math.min(10, valor.length())));
     }
 
     private JLabel crearLlegendaItem(String text, Color color) {

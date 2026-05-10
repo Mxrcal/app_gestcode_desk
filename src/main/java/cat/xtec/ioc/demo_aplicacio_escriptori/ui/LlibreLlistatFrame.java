@@ -15,7 +15,7 @@ import java.awt.*;
 import java.io.IOException;
 
 /**
- * Pantalla principal de gestió de llibres (Tasques #61 i #62 del TEA3).
+ * Pantalla principal de gestió de llibres.
  * <p>
  * Mostra tots els llibres en una JTable i permet cercar-ne en temps real
  * per títol o autor sense fer noves crides al servidor (el filtre treballa

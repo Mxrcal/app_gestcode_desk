@@ -159,7 +159,7 @@ public class LlibreComentarisDialog extends JDialog {
     // -------------------------------------------------------------------------
 
     /**
-     * Crida GET /api/books/{id}/comments i reconstrueix la llista de targetes.
+     * Crida GET /api/comments/book/{id} i reconstrueix la llista de targetes.
      */
     private void carregarComentaris() {
         llistaPanel.removeAll();
@@ -168,9 +168,6 @@ public class LlibreComentarisDialog extends JDialog {
         try {
             String resposta = apiClient.get("/api/comments/book/" + llibreId);
             ObjectMapper mapper = new ObjectMapper();
-
-            System.out.println("[DEBUG] URL consultada: " + "http://10.2.233.78:8080/api/comments/book/" + llibreId);
-            System.out.println("[DEBUG] Resposta: " + resposta);
 
             JsonNode arrel = mapper.readTree(resposta);
 
