@@ -1,111 +1,100 @@
-# BiblioGest — Aplicació d'Escriptori
+# BiblioGest Desktop
 
-**Mòdul M13 – Projecte | DAM | IOC**
-**Autor: Marc Illescas**
+Aplicacio d'escriptori en Java Swing per gestionar el client de biblioteca del projecte BiblioGest. Forma part del modul M13 de DAM i correspon a l'increment final del TEA4.
 
----
+## Resum
 
-## Descripció
+BiblioGest Desktop es connecta a una API REST protegida amb JWT i permet treballar amb usuaris, llibres, comentaris i prestecs. La comunicacio del TEA4 es fa per HTTPS a traves del bastio d'IsardVDI.
 
-BiblioGest és una aplicació d'escriptori desenvolupada en Java amb Swing per gestionar el catàleg d'una biblioteca. Es connecta a una API REST externa (backend desenvolupat per Jordi, servidor IOC a `http://10.2.233.78:8080`) i permet realitzar totes les operacions del CRUD de llibres, a més de consultar i moderar comentaris.
-
-El projecte s'ha desenvolupat de forma acumulativa al llarg de les entregues TEA2 i TEA3, afegint funcionalitat nova sense trencar mai el que ja funcionava.
-
----
-
-## Tecnologies utilitzades
+## Tecnologies
 
 | Element | Detall |
-|---|---|
+| --- | --- |
 | Llenguatge | Java 23 |
-| Interfície gràfica | Java Swing (sense JavaFX) |
-| Build | Maven 3.6.3 |
-| Serialització JSON | Jackson `jackson-databind:2.16.1` |
-| Comunicació HTTP | `java.net.http.HttpClient` (Java 11+) | 
-| Autenticació | Token JWT (enviat a la capçalera `Authorization: Bearer`) |
-| IDE | Visual Studio Code |
+| Interficie | Swing |
+| Build | Maven |
+| JSON | Jackson Databind 2.16.1 |
+| HTTP | `java.net.http.HttpClient` |
+| Autenticacio | JWT amb capcalera `Authorization: Bearer` |
 
----
+## Funcionalitats principals
 
-## Funcionalitats implementades
+- Login contra `POST /api/auth/login`.
+- Carrega i edicio del perfil de l'usuari autenticat.
+- CRUD de llibres amb formularis Swing i validacio de camps.
+- Llistat de llibres amb cerca per titol, autor, ISBN i genere.
+- Consulta i eliminacio de comentaris d'un llibre.
+- Solicitud de prestecs.
+- Devolucio de prestecs actius.
+- Llistat dels meus prestecs.
+- Historial de prestecs retornats o vencuts.
+- Avisos de prestecs propers a vencer i vencuts.
+- Vista de disponibilitat de llibres.
+- Vistes especifiques d'administracio quan l'usuari te rol `ADMIN`.
 
-### Autenticació
-- **Login** amb usuari i contrasenya contra `POST /api/auth/login`
-- El token JWT es guarda a `ApiClient` i s'envia automàticament a totes les peticions
+## Seguretat TEA4
 
-### Gestió de Llibres (CRUD complet)
-- **Llistat** de tots els llibres amb cerca en temps real per títol o autor (`LlibreLlistatFrame`)
-- **Alta** de nous llibres amb validació de camps obligatoris (`LlibreAfegirForm`)
-- **Edició** d'un llibre existent, amb l'ISBN bloquejat per evitar errors (`LlibreEditarForm`)
-- **Eliminació** amb confirmació prèvia (`DELETE /api/books/{id}`)
+- La URL base del client apunta a HTTPS mitjancant el bastio d'IsardVDI.
+- El token JWT es guarda centralitzat a `ApiClient` i s'envia automaticament a les peticions protegides.
+- La contrasenya no es gestiona ni s'emmagatzema al client; el backend utilitza BCrypt per guardar-la xifrada.
+- Les peticions simulades s'han reduit al minim: les pantalles carreguen dades reals des dels endpoints REST.
 
-> **Nota tècnica:** Els endpoints de llibres usen `multipart/form-data` i no JSON, perquè el servidor inclou un camp opcional de portada. La comunicació es gestiona amb el mètode `postMultipart()` / `putMultipart()` de l'`ApiClient`.
+## Estructura
 
-### Gestió de Comentaris
-- **Llistat de comentaris** per llibre, accessible des del llistat de llibres (`LlibreComentarisDialog`)
-- **Eliminació de comentaris** per a la moderació per part de l'administrador
-
-### Perfil d'Usuari
-- Visualització i edició de les dades del perfil (`UsuariForm`)
-- Tancament de sessió amb esborrat del token JWT
-
----
-
-## Estructura del projecte
-
-```
+```text
 src/main/java/cat/xtec/ioc/demo_aplicacio_escriptori/
-├── Demo_aplicacio_escriptori.java   ← Punt d'entrada (main)
+├── Demo_aplicacio_escriptori.java
 ├── api/
-│   ├── ApiClient.java               ← Totes les crides HTTP (GET/POST/PUT/DELETE + JWT)
-│   └── HttpResult.java              ← Guarda codi HTTP + cos de la resposta
+│   ├── ApiClient.java
+│   └── HttpResult.java
 ├── dto/
-│   ├── Usuari.java                  ← Model de l'usuari autenticat
-│   ├── UsuariUpdateDTO.java         ← Payload per actualitzar el perfil
-│   ├── Llibre.java                  ← Model del llibre (camps en anglès per al JSON)
-│   ├── LlibreCreateDTO.java         ← Camps que envia el formulari d'alta
-│   └── Comentari.java               ← Model d'un comentari d'un llibre
+│   ├── Comentari.java
+│   ├── Llibre.java
+│   ├── LlibreCreateDTO.java
+│   ├── Prestec.java
+│   ├── Usuari.java
+│   └── UsuariUpdateDTO.java
 └── ui/
-    ├── LoginForm.java               ← Pantalla de login
-    ├── UsuariForm.java              ← Panell principal post-login
-    ├── LlibreLlistatFrame.java      ← Taula de llibres amb cercador
-    ├── LlibreAfegirForm.java        ← Formulari d'alta de llibres
-    ├── LlibreEditarForm.java        ← Formulari d'edició de llibres
-    └── LlibreComentarisDialog.java  ← Diàleg de comentaris (modal)
+    ├── DisponibilitatLlibreFrame.java
+    ├── HistorialPrestecFrame.java
+    ├── LlibreAfegirForm.java
+    ├── LlibreComentarisDialog.java
+    ├── LlibreEditarForm.java
+    ├── LlibreLlistatFrame.java
+    ├── LoginForm.java
+    ├── PrestecDevolucioDialog.java
+    ├── PrestecLlistatFrame.java
+    ├── PrestecRecordatoriFrame.java
+    ├── PrestecSeguimentFrame.java
+    ├── PrestecSolicitudDialog.java
+    └── UsuariForm.java
 ```
 
----
+## Execucio
 
-## Com executar el projecte
+Requisits:
 
-### Requisits previs
-- Java 23 instal·lat
-- Maven 3.6+ instal·lat
-- Connexió a la xarxa del servidor IOC (`10.2.233.78`)
+- JDK 23.
+- Maven instal.lat.
+- Servidor backend disponible a la URL configurada a `Demo_aplicacio_escriptori.BASE_URL`.
 
-### Compilació i execució
+Comandes:
 
 ```bash
 mvn clean compile
-mvn exec:java -Dexec.mainClass="cat.xtec.ioc.demo_aplicacio_escriptori.Demo_aplicacio_escriptori"
+mvn exec:java
 ```
 
-O directament des de VS Code amb l'opció **Run** sobre `Demo_aplicacio_escriptori.java`.
+També es pot executar des de l'IDE obrint la classe `Demo_aplicacio_escriptori`.
 
----
+## Documentacio
 
-## Decisions tècniques destacades
+La carpeta `documentacio/` conte:
 
-- **multipart/form-data**: descobert mirant el Swagger del servidor. Els endpoints de llibres no accepten JSON (error 500 `Content-Type not supported`).
-- **Paginació Spring**: el servidor retorna les llistes dins d'un objecte `{"content": [...], "pageable": ...}`. Cal extreure el camp `content` amb `JsonNode` abans de deserialitzar a `Llibre[]` o `Comentari[]`.
-- **Clau `year`**: el servidor espera el camp de l'any com a `year`, no com a `publishYear`. Descobert en producció quan el servidor retornava error 400 de validació.
-- **JWT automàtic**: el token es guarda un sol cop a `ApiClient.setJwtToken()` i s'afegeix a totes les peticions sense haver-ho de recordar a cada pantalla.
+- `projecte.md`: visio general i funcionalitats.
+- `apiclient.md`: us practic del client HTTP.
+- `apiclient-metodes.md`: inventari dels metodes d'`ApiClient`.
+- `dtos-i-actualitzacio.md`: DTOs utilitzats i relacio amb l'API.
+- `api-docs.json`: resum local dels endpoints utilitzats pel client.
 
----
-
-## Entregues
-
-| Entrega | Contingut |
-|---|---|
-| TEA2 | Login, perfil d'usuari, estructura base del projecte |
-| TEA3 | CRUD complet de llibres, llistat amb cercador, gestió de comentaris |
+El fitxer `llegeixme.pdf` es genera a partir de `llegeixme.md` i es lliura com a document de lectura rapida per al TEA4.

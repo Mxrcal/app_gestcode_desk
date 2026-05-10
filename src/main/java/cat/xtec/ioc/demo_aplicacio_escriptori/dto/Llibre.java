@@ -50,6 +50,29 @@ public class Llibre {
     @JsonProperty("quantity")
     public Integer quantitat;
 
+    /**
+     * Còpies disponibles per a préstec, autocalculades pel servidor (TEA4).
+     * Pot ser {@code null} si el servidor no retorna aquest camp.
+     */
+    @JsonProperty("availableCopies")
+    public Integer copiesDisponibles;
+
+    /** Valoració mitjana del llibre calculada pel servidor. */
+    @JsonProperty("rating")
+    public Double rating;
+
+    /** Valoració personal de l'usuari autenticat per a aquest llibre. */
+    @JsonProperty("myRating")
+    public Double myRating;
+
+    /** URL de la imatge de portada del llibre (pot ser null). */
+    @JsonProperty("imageUrl")
+    public String imageUrl;
+
+    /** Data de creació del registre al servidor (ISO 8601). */
+    @JsonProperty("createdAt")
+    public String createdAt;
+
     @Override
     public String toString() {
         return "Llibre{id=" + id + ", titol='" + titol + "', isbn='" + isbn + "'}";

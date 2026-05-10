@@ -237,11 +237,17 @@ public class LlibreLlistatFrame extends JFrame {
         estilitzarBoto(comentarisButton, new Color(23, 162, 184)); // Cian
         comentarisButton.addActionListener(e -> onVeureComentaris());
 
+        JButton prestecButton = new JButton("📋 Demanar Préstec");
+        estilitzarBoto(prestecButton, new Color(111, 66, 193)); // Violeta
+        prestecButton.setToolTipText("Demana el llibre seleccionat en préstec");
+        prestecButton.addActionListener(e -> onDemanarPrestec());
+
         botoPanel.add(refrescarButton);
         botoPanel.add(nouButton);
         botoPanel.add(editarButton);
         botoPanel.add(eliminarButton);
         botoPanel.add(comentarisButton);
+        botoPanel.add(prestecButton);
 
         peu.add(estatLabel,  BorderLayout.WEST);
         peu.add(botoPanel,   BorderLayout.EAST);
@@ -385,6 +391,34 @@ public class LlibreLlistatFrame extends JFrame {
         String titol = (String) tableModel.getValueAt(modelFila, 1);
 
         new LlibreComentarisDialog(this, apiClient, id, titol).setVisible(true);
+    }
+
+    /**
+     * Agafa l'ID del llibre seleccionat i obre PrestecLlistatFrame amb el diàleg
+     * de nou préstec preomplert amb aquell ID.
+     */
+    private void onDemanarPrestec() {
+        int fila = taula.getSelectedRow();
+        if (fila < 0) {
+            JOptionPane.showMessageDialog(this,
+                    "Selecciona un llibre de la taula per demanar-lo en préstec.",
+                    "Cap selecció", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        int modelFila = taula.convertRowIndexToModel(fila);
+        Long   id    = (Long)   tableModel.getValueAt(modelFila, 0);
+        String titol = (String) tableModel.getValueAt(modelFila, 1);
+
+        int confirm = JOptionPane.showConfirmDialog(this,
+                "Vols demanar en préstec:\n\"" + titol + "\" (ID: " + id + ")?",
+                "Confirmar Préstec", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
+
+        if (confirm != JOptionPane.YES_OPTION) return;
+
+        PrestecLlistatFrame prestecFrame = new PrestecLlistatFrame(apiClient, false);
+        prestecFrame.setVisible(true);
+        prestecFrame.onDemanarPrestec(id);
     }
 
     // -------------------------------------------------------------------------

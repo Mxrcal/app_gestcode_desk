@@ -1,104 +1,87 @@
-# Referència de mètodes d'ApiClient i HttpResult
+# Metodes d'ApiClient
 
-## Classe `HttpResult`
+## `setJwtToken(String jwtToken)`
 
-Encapsula la resposta HTTP amb dos camps públics:
+Desa el token JWT rebut en el login. S'utilitza despres per afegir la capcalera `Authorization`.
 
-```java
-public class HttpResult {
-    public int statusCode;  // Codi de resposta HTTP (200, 201, 204, 400, 404, 500...)
-    public String body;     // Cos de la resposta en format text/JSON
-}
-```
+## `get(String endpoint)`
 
-**Important:** són camps públics, NO getters. S'accedeix com `resultat.statusCode` (sense parèntesis).
+Fa una peticio GET i retorna el cos de la resposta com a text.
 
----
+Usos principals:
 
-## Mètodes d'`ApiClient`
+- `GET /api/users/me`
+- `GET /api/books`
+- `GET /api/books/{id}`
+- `GET /api/loans/my-loans`
+- `GET /api/loans/my-loans/near-due`
+- `GET /api/loans/my-loans/overdue`
+- `GET /api/loans` per administradors
 
-### `post(String endpoint, String jsonBody)` → `String`
-Envia una petició POST amb cos JSON. Retorna només el cos de la resposta.
-- **Ús típic:** Login (`/api/auth/login`).
-- **Limitació:** No retorna el codi d'estat HTTP.
+## `post(String endpoint, String jsonBody)`
 
-```java
-String resposta = client.post("/api/auth/login", jsonLogin);
-```
+Fa una peticio POST amb JSON i retorna el cos de la resposta.
 
----
+Us principal:
 
-### `get(String endpoint)` → `String`
-Envia una petició GET autenticada. Retorna el cos de la resposta.
-- **Ús típic:** Consultar dades (`/api/users/me`, `/api/books`, `/api/comments/book/{id}`).
+- `POST /api/auth/login`
 
-```java
-String resposta = client.get("/api/books");
-```
+## `postWithStatus(String endpoint, String jsonBody)`
 
----
+Fa una peticio POST amb JSON i retorna `HttpResult`, que inclou codi HTTP i cos.
 
-### `postMultipart(String endpoint, Map<String,String> camps)` → `HttpResult`
-Envia una petició POST amb `multipart/form-data`. Construeix el boundary manualment amb UUID.
-- **Ús típic:** Crear un llibre nou (`POST /api/books`).
-- **Retorna:** `HttpResult` amb codi d'estat i cos.
+Us principal:
 
-```java
-HttpResult r = client.postMultipart("/api/books", camps);
-if (r.statusCode == 200 || r.statusCode == 201) { /* èxit */ }
-```
+- `POST /api/loans`
 
----
+## `postMultipart(String endpoint, Map<String, String> camps)`
 
-### `putMultipart(String endpoint, Map<String,String> camps)` → `HttpResult`
-Igual que `postMultipart` però amb el verb PUT.
-- **Ús típic:** Editar un llibre existent (`PUT /api/books/{id}`).
+Fa una peticio POST `multipart/form-data`.
 
-```java
-HttpResult r = client.putMultipart("/api/books/42", camps);
-```
+Us principal:
 
----
+- `POST /api/books`
 
-### `putWithStatus(String endpoint, String jsonBody)` → `HttpResult`
-Envia una petició PUT amb cos JSON. Retorna `HttpResult`.
-- **Ús típic:** Actualitzar el perfil d'usuari (`PUT /api/users/{id}`).
+S'utilitza perque el backend de llibres accepta formulari multipart per poder incorporar portada opcional.
 
-```java
-String json = mapper.writeValueAsString(updateDTO);
-HttpResult r = client.putWithStatus("/api/users/5", json);
-```
+## `putMultipart(String endpoint, Map<String, String> camps)`
 
----
+Fa una peticio PUT `multipart/form-data`.
 
-### `delete(String endpoint)` → `HttpResult`
-Envia una petició DELETE autenticada. Retorna `HttpResult`.
-- **Ús típic:** Eliminar un llibre (`DELETE /api/books/{id}`) o un comentari (`DELETE /api/comments/{id}`).
-- **Codis d'èxit esperats:** 200 o 204 (No Content).
+Us principal:
 
-```java
-HttpResult r = client.delete("/api/books/42");
-if (r.statusCode == 200 || r.statusCode == 204) { /* eliminat */ }
-```
+- `PUT /api/books/{id}`
 
----
+## `putWithStatus(String endpoint, String jsonBody)`
 
-### `setJwtToken(String token)`
-Guarda el token JWT internament. A partir d'aquí, tots els mètodes l'inclouen automàticament a la capçalera `Authorization: Bearer <token>`.
+Fa una peticio PUT amb JSON i retorna `HttpResult`.
 
-```java
-client.setJwtToken(tokenRebut);
-```
+Us principal:
 
----
+- `PUT /api/users/{id}`
 
-## Resum ràpid
+## `putEmpty(String endpoint)`
 
-| Mètode | Verb HTTP | Format cos | Retorna |
-|---|---|---|---|
-| `post` | POST | JSON | String |
-| `get` | GET | — | String |
-| `postMultipart` | POST | multipart/form-data | HttpResult |
-| `putMultipart` | PUT | multipart/form-data | HttpResult |
-| `putWithStatus` | PUT | JSON | HttpResult |
-| `delete` | DELETE | — | HttpResult |
+Fa una peticio PUT sense cos.
+
+Us principal:
+
+- `PUT /api/loans/{id}/return`
+
+## `delete(String endpoint)`
+
+Fa una peticio DELETE i retorna `HttpResult`.
+
+Usos principals:
+
+- `DELETE /api/books/{id}`
+- `DELETE /api/comments/{id}`
+
+## `HttpResult`
+
+`HttpResult` encapsula:
+
+- `statusCode`: codi HTTP retornat pel servidor.
+- `body`: cos de la resposta.
+
+Aixo permet que la UI informi clarament l'usuari quan una operacio funciona o falla.

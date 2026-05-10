@@ -1,77 +1,82 @@
-# Descripció del projecte BiblioGest Desktop
+# Projecte BiblioGest Desktop
 
-Aquest projecte és una aplicació d'escriptori desenvolupada amb Java Swing que permet gestionar una biblioteca connectant-se a una API REST amb autenticació JWT.
+## Objectiu
 
-## Tecnologia
+BiblioGest Desktop es l'aplicacio client d'escriptori del projecte BiblioGest. El seu objectiu es permetre que un usuari de biblioteca pugui consultar llibres, gestionar el seu perfil i treballar amb prestecs, mentre que un administrador pot fer tasques de manteniment i seguiment.
 
-- **Llenguatge:** Java 23
-- **Interfície gràfica:** Java Swing (pur, sense JavaFX)
-- **Build:** Maven 3.6.3
-- **Serialització JSON:** Jackson (`jackson-databind:2.16.1`)
-- **Comunicació HTTP:** `java.net.http.HttpClient` (inclòs al JDK)
+## Context TEA4
 
-## Connexió a l'API
+En el TEA4 s'ha consolidat l'increment final del projecte. El client passa a consumir el servidor real per HTTPS i s'afegeixen funcionalitats de prestec i seguiment que donen valor directe a l'usuari final.
 
-La URL base de l'API és:
-```
-http://10.2.233.78:8080
-```
+Punts importants del TEA4:
 
-Es pot canviar a `ApiClient.java` modificant la constant `BASE_URL` per adaptar-la a futurs canvis de servidor.
-
-Exemples de rutes disponibles:
-- Login: `POST /api/auth/login`
-- Usuari actual: `GET /api/users/me`
-- Actualitzar usuari: `PUT /api/users/{id}`
-- Llistat de llibres: `GET /api/books`
-- Crear llibre: `POST /api/books`
-- Editar llibre: `PUT /api/books/{id}`
-- Eliminar llibre: `DELETE /api/books/{id}`
-- Comentaris d'un llibre: `GET /api/comments/book/{id}`
-- Eliminar comentari: `DELETE /api/comments/{id}`
+- Comunicacio xifrada amb el servidor mitjancant HTTPS.
+- Autenticacio JWT.
+- Contrasenyes xifrades al backend amb BCrypt.
+- Reduccio de peticions simulades: les pantalles treballen amb endpoints reals.
+- Increment funcional complet amb llibres, comentaris, disponibilitat i prestecs.
 
 ## Funcionalitats implementades
 
-### Gestió d'usuaris
-- Login amb JWT
-- Visualització del perfil de l'usuari autenticat
-- Edició de dades del perfil (nom, cognoms)
+### Autenticacio i usuari
 
-### Gestió de llibres
-- Llistat de llibres amb cercador en temps real per títol i autor
-- Afegir nou llibre (formulari amb validació)
-- Editar llibre existent (pre-omple tots els camps)
-- Eliminar llibre amb confirmació
+- Login amb usuari o correu i contrasenya.
+- Desat centralitzat del token JWT.
+- Consulta del perfil de l'usuari autenticat.
+- Edicio de dades personals.
+- Adaptacio de la interfície segons rol `USER` o `ADMIN`.
 
-### Gestió de comentaris
-- Visualització de comentaris per llibre en diàleg modal
-- Eliminació de comentaris individuals
+### Llibres
 
-## Estructura de paquets
+- Llistat de llibres.
+- Cerca en temps real.
+- Consulta de detall.
+- Alta de llibre.
+- Edicio de llibre.
+- Eliminacio de llibre.
+- Visualitzacio de disponibilitat segons copies totals i disponibles.
 
+### Comentaris
+
+- Consulta de comentaris associats a un llibre.
+- Eliminacio de comentaris mitjancant endpoint real.
+
+### Prestecs
+
+- Solicitud de prestec d'un llibre disponible.
+- Devolucio de prestecs actius.
+- Llistat dels prestecs de l'usuari.
+- Historial de prestecs retornats o vencuts.
+- Avisos de prestecs propers a vencer.
+- Avisos de prestecs vencuts.
+- Seguiment general per a administradors.
+
+## Arquitectura
+
+La UI Swing no accedeix mai directament a la base de dades. Totes les operacions passen per `ApiClient`, que centralitza:
+
+- Construccio de peticions HTTP.
+- Afegit automatic del token JWT.
+- Gestio de cossos JSON.
+- Gestio de `multipart/form-data` per llibres.
+- Retorn de codis HTTP amb `HttpResult` quan cal donar feedback a l'usuari.
+
+## Decisions tecniques
+
+- S'utilitza `HttpClient` del JDK per evitar dependencies innecessaries.
+- Jackson s'utilitza per serialitzar i deserialitzar DTOs.
+- Els endpoints de llibres utilitzen `multipart/form-data`, per compatibilitat amb el backend i el camp opcional de portada.
+- Les llistes paginades del backend es processen extraient el camp `content`.
+- Els DTOs ignoren camps desconeguts quan cal per evitar errors si el backend amplia la resposta.
+
+## URL del servidor
+
+La URL base es configura a `Demo_aplicacio_escriptori.BASE_URL`.
+
+En el TEA4 apunta a una URL HTTPS del bastio d'IsardVDI:
+
+```text
+https://401c000f-26f1-447e-b499.e9734fe78f0a.bastion.elmeuescriptori.cat
 ```
-cat.xtec.ioc.demo_aplicacio_escriptori/
-├── Demo_aplicacio_escriptori.java   ← Punt d'entrada (main)
-├── api/
-│   ├── ApiClient.java               ← Client HTTP centralitzat
-│   └── HttpResult.java              ← Wrapper (statusCode + body)
-├── dto/
-│   ├── Usuari.java                  ← Model usuari
-│   ├── UsuariUpdateDTO.java         ← Payload PUT usuari
-│   ├── Llibre.java                  ← Model llibre
-│   ├── LlibreCreateDTO.java         ← Payload POST llibre
-│   └── Comentari.java               ← Model comentari
-└── ui/
-    ├── LoginForm.java               ← Pantalla login
-    ├── UsuariForm.java              ← Pantalla principal post-login
-    ├── LlibreAfegirForm.java        ← Formulari alta de llibres
-    ├── LlibreEditarForm.java        ← Formulari edició de llibres
-    ├── LlibreLlistatFrame.java      ← Llistat de llibres amb cercador
-    └── LlibreComentarisDialog.java  ← Diàleg modal de comentaris
-```
 
-## Convencions
-
-- Els comentaris, noms de variables i textos de la interfície s'escriuen en **català**.
-- Cada fitxer nou inclou `@author Marc Illescas`.
-- La capa de presentació (UI) **mai** accedeix directament a la base de dades: tota comunicació passa per `ApiClient`.
+Si el servidor canvia, nomes cal actualitzar aquesta constant.

@@ -242,6 +242,32 @@ public class ApiClient {
     }
 
     /**
+     * Fa un PUT sense cos a l'endpoint indicat i retorna el codi HTTP i el cos.
+     * Usat per a operacions d'estat que no necessiten body, com ara
+     * PUT /api/loans/{id}/return per retornar un préstec.
+     *
+     * @param endpoint Ruta relativa (ex: "/api/loans/5/return")
+     * @return {@link HttpResult} amb el codi d'estat i el cos de la resposta
+     * @throws IOException si hi ha problemes de connexió
+     */
+    public HttpResult putEmpty(String endpoint) throws IOException {
+        HttpRequest.Builder builder = HttpRequest.newBuilder()
+                .uri(URI.create(baseUrl + endpoint))
+                .header("Accept", "application/json")
+                .PUT(HttpRequest.BodyPublishers.noBody());
+        if (jwtToken != null) {
+            builder.header("Authorization", "Bearer " + jwtToken);
+        }
+        try {
+            HttpResponse<String> response = client.send(builder.build(), HttpResponse.BodyHandlers.ofString());
+            return new HttpResult(response.statusCode(), response.body());
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IOException("Petició interrompuda", e);
+        }
+    }
+
+    /**
      * Fa un DELETE a l'endpoint indicat i retorna el codi HTTP i el cos.
      * El servidor pot retornar 200 o 204 (sense cos) si l'eliminació ha anat bé.
      *

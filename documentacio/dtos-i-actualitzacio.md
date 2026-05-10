@@ -1,135 +1,101 @@
-# Guia dels DTOs del projecte
+# DTOs i actualitzacio de dades
 
-## Què és un DTO?
+Els DTOs representen les dades que el client rep o envia a l'API REST. El projecte utilitza classes simples per facilitar la serialitzacio amb Jackson.
 
-Un DTO (Data Transfer Object) és una classe Java que serveix per transportar dades entre l'aplicació i l'API REST. Amb Jackson, es serialitzen/deserialitzen automàticament a/des de JSON.
+## `Usuari`
 
-**Convenció important:** els noms dels camps a l'API estan en anglès, però els noms de les variables Java estan en català. L'anotació `@JsonProperty` fa la correspondència entre els dos noms.
+Representa el perfil retornat pel backend.
 
----
+Camps principals:
 
-## DTOs de lectura (dades que ens envia el servidor)
+- `id`
+- `username`
+- `firstName`
+- `lastName1`
+- `lastName2`
+- `email`
+- `status`
+- `enabled`
+- `role`
+- `createdAt`
 
-### `Usuari`
-Representa la fitxa d'un usuari retornada per l'API:
+## `UsuariUpdateDTO`
 
-```java
-public class Usuari {
-    public Long id;
-    public String username;
-    public String firstName;
-    public String lastName1;
-    public String lastName2;
-    public String email;
-    public String status;
-    public Boolean enabled;
-    public String role;
-    public String createdAt;
-}
-```
+Payload utilitzat per actualitzar un usuari.
 
-### `Llibre`
-Representa un llibre retornat per l'API. Nota: el camp del servidor `year` es mapeja a `anyPublicacio`:
+Camps:
 
-```java
-@JsonIgnoreProperties(ignoreUnknown = true)
-public class Llibre {
-    @JsonProperty("id")          public Long id;
-    @JsonProperty("title")       public String titol;
-    @JsonProperty("author")      public String autor;
-    @JsonProperty("isbn")        public String isbn;
-    @JsonProperty("year")        public Integer anyPublicacio;   // ← "year", NO "publishYear"
-    @JsonProperty("description") public String descripcio;
-    @JsonProperty("genre")       public String genere;
-    @JsonProperty("pages")       public Integer pagines;
-    @JsonProperty("language")    public String idioma;
-    @JsonProperty("quantity")    public Integer quantitat;
-}
-```
+- `firstName`
+- `lastName1`
+- `lastName2`
+- `status`
+- `role`
+- `enabled`
 
-### `Comentari`
-Representa un comentari retornat per l'API:
+La classe usa `@JsonInclude(JsonInclude.Include.NON_NULL)` per no enviar camps buits.
 
-```java
-@JsonIgnoreProperties(ignoreUnknown = true)
-public class Comentari {
-    @JsonProperty("id")        public Long id;
-    @JsonProperty("content")   public String contingut;
-    @JsonProperty("username")  public String usuari;
-    @JsonProperty("createdAt") public String dataCreacio;
-    @JsonProperty("bookId")    public Long llibreId;
-}
-```
+## `Llibre`
 
----
+Representa un llibre rebut del servidor.
 
-## DTOs d'escriptura (dades que enviem al servidor)
+Camps principals:
 
-### `UsuariUpdateDTO`
-Camps que es poden enviar en un `PUT /api/users/{id}`:
+- `id`
+- `titol`
+- `autor`
+- `isbn`
+- `anyPublicacio`
+- `descripcio`
+- `genere`
+- `pagines`
+- `idioma`
+- `quantitat`
+- `copiesDisponibles`
+- `rating`
+- `myRating`
+- `imageUrl`
+- `createdAt`
 
-```java
-@JsonInclude(JsonInclude.Include.NON_NULL)
-public class UsuariUpdateDTO {
-    public String firstName;
-    public String lastName1;
-    public String lastName2;
-    public String status;   // Només administradors
-    public String role;     // Només administradors
-    public Boolean enabled; // Només administradors
-}
-```
+Els noms interns en catala es mapegen amb `@JsonProperty` als camps JSON del backend, com `title`, `author`, `year` o `availableCopies`.
 
-El `@JsonInclude(NON_NULL)` fa que els camps amb valor `null` no s'enviïn al servidor.
+## `LlibreCreateDTO`
 
-### `LlibreCreateDTO`
-Defineix els camps per crear o editar un llibre. **Atenció:** l'API de llibres NO accepta JSON sinó `multipart/form-data`, per tant aquest DTO s'utilitza com a referència però l'enviament real es fa amb un `Map<String,String>` via `postMultipart` o `putMultipart`.
+Documenta els camps necessaris per crear un llibre. En la implementacio actual no s'envia com a JSON, perque el backend espera `multipart/form-data`.
 
-Claus correctes del formulari (noms en anglès, tal com espera el servidor):
+## `Comentari`
 
-| Clau del camp | Descripció |
-|---|---|
-| `title` | Títol del llibre |
-| `author` | Autor |
-| `isbn` | ISBN (no es pot modificar un cop creat) |
-| `year` | Any de publicació |
-| `genre` | Gènere literari |
-| `pages` | Nombre de pàgines |
-| `language` | Idioma |
-| `quantity` | Quantitat d'exemplars |
-| `description` | Descripció / sinopsi |
+Representa un comentari associat a un llibre.
 
----
+Camps:
 
-## Paginació Spring Boot
+- `id`
+- `contingut`
+- `usuari`
+- `dataCreacio`
+- `llibreId`
 
-Alguns endpoints retornen les dades envoltades en un objecte de paginació:
+## `Prestec`
 
-```json
-{
-  "content": [ {...}, {...} ],
-  "pageable": { ... },
-  "totalPages": 3
-}
-```
+Representa un prestec retornat pel backend.
 
-En aquest cas **no es pot deserialitzar directament a `Llibre[]`**. Cal extreure primer el camp `content`:
+Camps:
 
-```java
-JsonNode arrel = mapper.readTree(resposta);
-JsonNode content = arrel.has("content") && arrel.get("content").isArray()
-    ? arrel.get("content")
-    : arrel;
-Llibre[] llibres = mapper.treeToValue(content, Llibre[].class);
-```
+- `id`
+- `userId`
+- `username`
+- `bookId`
+- `bookTitle`
+- `loanDate`
+- `dueDate`
+- `returnDate`
+- `status`
 
-Endpoints afectats coneguts: `GET /api/books`, `GET /api/comments/book/{id}`.
+Valors habituals de `status`:
 
----
+- `ACTIU`
+- `RETORNAT`
+- `VENÇUT`
 
-## Resum de bones pràctiques
+## Criteri d'actualitzacio
 
-- Afegeix sempre `@JsonIgnoreProperties(ignoreUnknown = true)` als DTOs de lectura per evitar errors si el servidor afegeix nous camps.
-- Utilitza `@JsonInclude(NON_NULL)` als DTOs d'escriptura per no enviar camps buits.
-- Comprova sempre si la resposta conté paginació (`content`) abans de deserialitzar llistes.
-- Els camps de llibres s'envien en anglès (`title`, `author`, `year`...), però les variables Java estan en català (`titol`, `autor`, `anyPublicacio`...).
+La UI nomes construeix els DTOs o mapes de camps necessaris per a cada endpoint. La validacio inicial es fa a formularis Swing i la validacio definitiva queda al backend.
